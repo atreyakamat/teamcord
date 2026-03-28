@@ -84,6 +84,21 @@ async function buildApp() {
     routePrefix: "/docs",
   });
 
+  // Register authenticate decorator for route preHandlers
+  app.decorate(
+    "authenticate",
+    async function (
+      request: import("fastify").FastifyRequest,
+      reply: import("fastify").FastifyReply
+    ) {
+      try {
+        await request.jwtVerify();
+      } catch (err) {
+        reply.status(401).send({ error: "Unauthorized", statusCode: 401 });
+      }
+    }
+  );
+
   // ─── Routes ───────────────────────────────────────────────────────────────
 
   await app.register(authRoutes, { prefix: "/api/v1/auth" });
