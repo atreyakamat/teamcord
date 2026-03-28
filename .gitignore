@@ -1,17 +1,27 @@
 # Dependencies
 node_modules/
+<<<<<<< HEAD
 .pnpm-store/
+=======
+.pnp
+.pnp.js
+>>>>>>> fe8b75e35d81b8dc3a23304251ae8c388484bbad
 
 # Build outputs
 dist/
 build/
 .next/
 out/
+<<<<<<< HEAD
+=======
+.turbo/
+>>>>>>> fe8b75e35d81b8dc3a23304251ae8c388484bbad
 
 # Environment files
 .env
 .env.local
 .env.*.local
+<<<<<<< HEAD
 *.env
 
 # IDE
@@ -23,14 +33,32 @@ out/
 
 # Logs
 logs/
+=======
+
+# Logs
+>>>>>>> fe8b75e35d81b8dc3a23304251ae8c388484bbad
 *.log
 npm-debug.log*
 pnpm-debug.log*
 
+<<<<<<< HEAD
+=======
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+>>>>>>> fe8b75e35d81b8dc3a23304251ae8c388484bbad
 # Testing
 coverage/
 .nyc_output/
 
+<<<<<<< HEAD
 # Database
 *.db
 *.sqlite
@@ -48,3 +76,8 @@ docker-data/
 
 # OS files
 Thumbs.db
+=======
+# Temp
+tmp/
+temp/
+>>>>>>> fe8b75e35d81b8dc3a23304251ae8c388484bbad

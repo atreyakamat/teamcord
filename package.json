@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "nexus",
   "version": "1.0.0",
   "private": true,
@@ -25,4 +26,31 @@
     "node": ">=18.0.0",
     "pnpm": ">=8.0.0"
   }
+=======
+  "name": "teamcord",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Discord but for small teams and agencies — tastes actually better",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "db:push": "pnpm --filter @teamcord/db db:push",
+    "db:migrate": "pnpm --filter @teamcord/db db:migrate",
+    "db:studio": "pnpm --filter @teamcord/db db:studio"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2",
+    "prettier": "^3.4.2",
+    "@types/node": "^22.10.7"
+  },
+  "packageManager": "pnpm@9.15.9"
+>>>>>>> fe8b75e35d81b8dc3a23304251ae8c388484bbad
 }
