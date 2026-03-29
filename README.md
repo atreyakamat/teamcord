@@ -30,11 +30,11 @@ Discord is a consumer app being abused as a work tool. TeamCord is a work tool f
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+
+- pnpm 9+
 - Docker & Docker Compose
-- Git
 
-### One-Command Setup
+### One-Command Setup (Windows)
 
 ```bash
 # Clone the repository
@@ -42,36 +42,43 @@ git clone https://github.com/atreyakamat/teamcord
 cd teamcord
 
 # Run the setup script
-node setup-teamcord.js
+setup.bat
+
+# Start development servers
+start-dev.bat
+```
+
+### One-Command Setup (Linux/Mac)
+
+```bash
+# Clone the repository
+git clone https://github.com/atreyakamat/teamcord
+cd teamcord
 
 # Install dependencies
-npm install
+pnpm install
 
 # Start Docker services
-docker-compose up -d postgres redis minio
+docker compose up -d postgres redis minio
 
 # Run database migrations
-cd packages/db && npm run db:push && cd ../..
+cd packages/db && pnpm db:push && cd ../..
 
-# Start development servers (Windows)
-start-dev.bat
-
-# Or on Linux/Mac
-./start-dev.sh
+# Start development servers
+pnpm dev
 ```
 
 ### Manual Setup
 
 ```bash
-# Install dependencies for each service
-cd apps/api && npm install && cd ../..
-cd apps/gateway && npm install && cd ../..
-cd apps/web && npm install && cd ../..
+# Build shared packages first
+pnpm --filter @teamcord/types build
+pnpm --filter @teamcord/db build
 
 # Start each service individually
-cd apps/api && npm run dev        # API on http://localhost:3001
-cd apps/gateway && npm run dev    # Gateway on ws://localhost:3002
-cd apps/web && npm run dev        # Web on http://localhost:3000
+cd apps/api && pnpm dev        # API on http://localhost:3001
+cd apps/gateway && pnpm dev    # Gateway on ws://localhost:3002
+cd apps/web && pnpm dev        # Web on http://localhost:3000
 ```
 
 ### Using Docker Only
@@ -109,22 +116,27 @@ teamcord/
 | **Search** | PostgreSQL full-text search |
 | **AI** | Ollama (local LLM — llama3, mistral, etc.) |
 | **File Storage** | MinIO (S3-compatible, self-hosted) |
-| **Monorepo** | Turborepo + npm workspaces |
+| **Monorepo** | Turborepo + pnpm workspaces |
 
 ## 🛠️ Development
 
 ```bash
 # Start all services
-npm run dev
+pnpm dev
 
 # Run tests
-npm run test
+pnpm test
 
 # Lint code
-npm run lint
+pnpm lint
 
 # Build for production
-npm run build
+pnpm build
+
+# Database operations
+pnpm db:push     # Push schema to database
+pnpm db:migrate  # Run migrations
+pnpm db:studio   # Open Drizzle Studio
 ```
 
 ## 🔒 Security

@@ -1,56 +1,36 @@
 {
-<<<<<<< HEAD
-  "name": "nexus",
-  "version": "1.0.0",
-  "private": true,
-  "description": "Nexus - Team Communication Platform",
-  "scripts": {
-    "dev": "pnpm --parallel -r dev",
-    "dev:web": "pnpm --filter @nexus/web dev",
-    "dev:api": "pnpm --filter @nexus/api dev",
-    "build": "pnpm --parallel -r build",
-    "build:web": "pnpm --filter @nexus/web build",
-    "build:api": "pnpm --filter @nexus/api build",
-    "lint": "pnpm --parallel -r lint",
-    "test": "pnpm --parallel -r test",
-    "db:migrate": "pnpm --filter @nexus/api db:migrate",
-    "db:generate": "pnpm --filter @nexus/api db:generate",
-    "db:seed": "pnpm --filter @nexus/api db:seed",
-    "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down"
-  },
-  "keywords": ["communication", "team", "chat", "discord-alternative"],
-  "author": "Nexus Team",
-  "license": "MIT",
-  "engines": {
-    "node": ">=18.0.0",
-    "pnpm": ">=8.0.0"
-  }
-=======
   "name": "teamcord",
   "version": "0.1.0",
   "private": true,
-  "description": "Discord but for small teams and agencies — tastes actually better",
+  "description": "TeamCord - Discord but for small teams and agencies",
+  "keywords": ["communication", "team", "chat", "discord-alternative", "self-hosted"],
+  "author": "TeamCord Team",
+  "license": "MIT",
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
   },
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "dev": "turbo run dev",
+    "dev:web": "pnpm --filter @teamcord/web dev",
+    "dev:api": "pnpm --filter @teamcord/api dev",
+    "dev:gateway": "pnpm --filter @teamcord/gateway dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "clean": "turbo run clean && rm -rf node_modules",
     "db:push": "pnpm --filter @teamcord/db db:push",
     "db:migrate": "pnpm --filter @teamcord/db db:migrate",
-    "db:studio": "pnpm --filter @teamcord/db db:studio"
+    "db:studio": "pnpm --filter @teamcord/db db:studio",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "generate": "node generate-sources.js && node generate-sources-2.js"
   },
   "devDependencies": {
     "turbo": "^2.3.3",
     "typescript": "^5.7.2",
     "prettier": "^3.4.2",
     "@types/node": "^22.10.7"
-  },
-  "packageManager": "pnpm@9.15.9"
->>>>>>> fe8b75e35d81b8dc3a23304251ae8c388484bbad
+  }
 }

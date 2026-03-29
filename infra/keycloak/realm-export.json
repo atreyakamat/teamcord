@@ -1,0 +1,55 @@
+{
+  "realm": "nexus",
+  "enabled": true,
+  "displayName": "Nexus",
+  "clients": [
+    {
+      "clientId": "nexus-web",
+      "enabled": true,
+      "publicClient": true,
+      "redirectUris": ["http://localhost:3000/*"],
+      "webOrigins": ["http://localhost:3000"],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true
+    },
+    {
+      "clientId": "nexus-api",
+      "enabled": true,
+      "bearerOnly": false,
+      "publicClient": false,
+      "secret": "nexus-api-secret-change-me",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "admin",
+        "description": "Nexus Administrator"
+      },
+      {
+        "name": "user",
+        "description": "Nexus Regular User"
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "admin",
+      "email": "admin@nexus.sh",
+      "enabled": true,
+      "firstName": "Nexus",
+      "lastName": "Admin",
+      "realmRoles": ["admin"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "nexus_admin_pass",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

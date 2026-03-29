@@ -1,49 +1,83 @@
 @echo off
-echo ========================================
-echo  Nexus Project Setup Script
-echo ========================================
+echo ╔══════════════════════════════════════════════════════════════╗
+echo ║           TeamCord - Development Environment Setup           ║
+echo ╠══════════════════════════════════════════════════════════════╣
+echo ║  Discord alternative for teams - Self-hosted, Open-source    ║
+echo ╚══════════════════════════════════════════════════════════════╝
 echo.
 
 cd /d %~dp0
 
-echo Creating directory structure...
-mkdir apps\web\src\components 2>nul
-mkdir apps\web\src\pages 2>nul
-mkdir apps\web\src\hooks 2>nul
-mkdir apps\web\src\stores 2>nul
-mkdir apps\web\src\utils 2>nul
-mkdir apps\web\src\styles 2>nul
-mkdir apps\web\src\services 2>nul
-mkdir apps\web\public 2>nul
-mkdir apps\api\src\routes 2>nul
-mkdir apps\api\src\services 2>nul
-mkdir apps\api\src\middleware 2>nul
-mkdir apps\api\src\utils 2>nul
-mkdir apps\api\src\websocket 2>nul
-mkdir apps\api\prisma 2>nul
-mkdir packages\shared\src 2>nul
-mkdir packages\ui\src\components 2>nul
-mkdir docker 2>nul
-
-echo Directories created!
+echo [1/6] Checking prerequisites...
+where pnpm >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo ERROR: pnpm is not installed. Install it with: npm install -g pnpm
+    pause
+    exit /b 1
+)
+where docker >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo WARNING: Docker not found. You'll need Docker for database services.
+)
+echo       Prerequisites OK
 echo.
-echo Installing dependencies...
+
+echo [2/6] Creating .env file from template...
+if not exist .env (
+    copy .env.example .env >nul
+    echo       Created .env - IMPORTANT: Edit JWT_SECRET before production!
+) else (
+    echo       .env already exists, skipping
+)
+echo.
+
+echo [3/6] Installing dependencies with pnpm...
 call pnpm install
-
+if %ERRORLEVEL% NEQ 0 (
+    echo ERROR: pnpm install failed
+    pause
+    exit /b 1
+)
+echo       Dependencies installed
 echo.
-echo Generating Prisma client...
-cd apps\api
-call pnpm db:generate
+
+echo [4/6] Building shared packages...
+call pnpm --filter @teamcord/types build
+call pnpm --filter @teamcord/db build
+echo       Packages built
+echo.
+
+echo [5/6] Starting Docker infrastructure (postgres, redis, minio)...
+docker compose up -d postgres redis minio
+if %ERRORLEVEL% NEQ 0 (
+    echo WARNING: Docker services failed to start. Start them manually:
+    echo          docker compose up -d postgres redis minio
+) else (
+    echo       Docker services started
+    echo       Waiting 5 seconds for PostgreSQL to initialize...
+    timeout /t 5 /nobreak >nul
+)
+echo.
+
+echo [6/6] Running database migrations...
+cd packages\db
+call pnpm db:push
 cd ..\..
+echo       Database schema applied
+echo.
 
-echo.
-echo ========================================
-echo  Setup complete!
-echo ========================================
-echo.
-echo Next steps:
-echo  1. Create a .env file in apps/api with your settings
-echo  2. Run: pnpm db:migrate
-echo  3. Run: pnpm dev
+echo ╔══════════════════════════════════════════════════════════════╗
+echo ║                    Setup Complete!                            ║
+echo ╠══════════════════════════════════════════════════════════════╣
+echo ║  To start development:                                        ║
+echo ║    pnpm dev                                                   ║
+echo ║                                                               ║
+echo ║  Or start services individually:                              ║
+echo ║    pnpm dev:api     - API on http://localhost:3001           ║
+echo ║    pnpm dev:gateway - WebSocket on ws://localhost:3002       ║
+echo ║    pnpm dev:web     - Web UI on http://localhost:3000        ║
+echo ║                                                               ║
+echo ║  API Documentation: http://localhost:3001/docs               ║
+echo ╚══════════════════════════════════════════════════════════════╝
 echo.
 pause
