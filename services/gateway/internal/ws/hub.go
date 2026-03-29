@@ -5,6 +5,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/nats-io/nats.go"
 	"github.com/nexus/gateway/internal/protocol"
 )
 
@@ -22,19 +23,36 @@ type Hub struct {
 	// Unregister requests from clients.
 	unregister chan *Client
 
+	nc *nats.Conn
 	mu sync.RWMutex
 }
 
-func NewHub() *Hub {
+func NewHub(nc *nats.Conn) *Hub {
 	return &Hub{
 		broadcast:  make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),
+		nc:         nc,
 	}
 }
 
 func (h *Hub) Run() {
+	// Subscribe to all channel and workspace events
+	_, err := h.nc.Subscribe("channel.*", func(m *nats.Msg) {
+		h.broadcast <- m.Data
+	})
+	if err != nil {
+		log.Fatalf("NATS subscribe error: %v", err)
+	}
+
+	_, err = h.nc.Subscribe("workspace.*", func(m *nats.Msg) {
+		h.broadcast <- m.Data
+	})
+	if err != nil {
+		log.Fatalf("NATS subscribe error: %v", err)
+	}
+
 	for {
 		select {
 		case client := <-h.register:

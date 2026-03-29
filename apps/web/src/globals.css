@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --dc-blurple: #5865F2;
+    --dc-blurple-dark: #4752C4;
+    --dc-green: #57F287;
+    --dc-yellow: #FEE75C;
+    --dc-red: #ED4245;
+    --dc-fuchsia: #EB459E;
+    
+    --dc-bg-tertiary: #1E1F22;
+    --dc-bg-secondary: #2B2D31;
+    --dc-bg-primary: #313338;
+    --dc-bg-input: #383A40;
+    --dc-bg-hover: #35373C;
+    --dc-bg-selected: #404249;
+    
+    --dc-text-normal: #DBDEE1;
+    --dc-text-muted: #949BA4;
+    --dc-text-link: #00A8FC;
+    --dc-border: #3F4248;
+  }
+
+  body {
+    background-color: var(--dc-bg-primary);
+    color: var(--dc-text-normal);
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  #root {
+    height: 100%;
+  }
+}
+
+@layer utilities {
+  .bg-dc-tertiary { background-color: var(--dc-bg-tertiary); }
+  .bg-dc-secondary { background-color: var(--dc-bg-secondary); }
+  .bg-dc-primary { background-color: var(--dc-bg-primary); }
+  .bg-dc-input { background-color: var(--dc-bg-input); }
+  .bg-dc-hover { background-color: var(--dc-bg-hover); }
+  .bg-dc-selected { background-color: var(--dc-bg-selected); }
+  
+  .text-dc-normal { color: var(--dc-text-normal); }
+  .text-dc-muted { color: var(--dc-text-muted); }
+  .text-dc-link { color: var(--dc-text-link); }
+  
+  .border-dc { border-color: var(--dc-border); }
+}
+
+/* Custom Scrollbar (Discord-style) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--dc-bg-tertiary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #111;
+}

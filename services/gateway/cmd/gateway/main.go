@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/nats-io/nats.go"
 	"github.com/nexus/gateway/internal/ws"
 )
 
@@ -16,7 +17,17 @@ func main() {
 		port = "3002"
 	}
 
-	hub := ws.NewHub()
+	natsURL := os.Getenv("NATS_URL")
+	if natsURL == "" {
+		natsURL = nats.DefaultURL
+	}
+
+	nc, err := nats.Connect(natsURL)
+	if err != nil {
+		log.Fatalf("NATS connect error: %v", err)
+	}
+
+	hub := ws.NewHub(nc)
 	go hub.Run()
 
 	r := chi.NewRouter()
