@@ -4,29 +4,58 @@
 
 A self-hosted, open-source team communication platform built specifically for small agencies and teams.
 
+## 📊 Project Status: 35-40% Complete (Alpha)
+
+**Current State:** Core messaging and authentication working. Voice/video, AI agent, and file uploads are critical blockers for MVP.
+
+**Estimated Time to MVP:** 8-12 weeks with 2-3 developers
+
+📖 **Read these first:**
+- [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) - Comprehensive feature status (30,000 words)
+- [IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md) - Quick overview and next steps
+- [WHAT_TO_DO_NEXT.md](./WHAT_TO_DO_NEXT.md) - Your roadmap to MVP (START HERE)
+
 ## 🌟 Features
 
-- 💬 **Real-time Messaging** - Channels, threads, DMs with full markdown support
-- 🎥 **Voice & Video** - WebRTC-powered calls with screen sharing
-- 🤖 **AI Agent** - Built-in AI assistant powered by Ollama (local, free, private)
-- 🔍 **Superior Search** - PostgreSQL full-text search — find anything, instantly
-- 📋 **Decision Log** - First-class log of every important decision
-- 🔐 **Client Portal** - Scoped channel access for external clients
-- 🏠 **Self-Hostable** - Run on your own infrastructure with Docker
+### ✅ Implemented (Working Now)
+- ✅ **Real-time Messaging** - Channels, send/edit/delete messages with WebSocket updates
+- ✅ **User Authentication** - JWT tokens, bcrypt hashing, rate limiting
+- ✅ **Workspaces & Channels** - Create, manage, organize
+- ✅ **Discord-inspired UI** - Full dark theme, three-panel layout
+- ✅ **Infrastructure** - PostgreSQL, Redis, NATS, MinIO, Meilisearch, Ollama
 
-## Why TeamCord?
+### 🚧 In Progress (Critical for MVP)
+- ❌ **Voice & Video** (0% - **BLOCKER**) - WebRTC calls and screen sharing
+- ⚠️ **AI Agent** (15%) - @agent mentions, /summarise, /decide commands
+- ❌ **File Upload** (0%) - File attachments and storage
+- ⚠️ **Search** (5%) - Full-text search integration
+- ⚠️ **Threads** (10%) - Threaded conversations
+- ⚠️ **Reactions** (10%) - Emoji reactions
 
-Discord is a consumer app being abused as a work tool. TeamCord is a work tool from day one.
+### 🔮 Planned Features
+- 📋 **Decision Log** - AI-powered decision tracking
+- 🏠 **Client Portal** - Scoped channel access for external clients
+- 📝 **Channel Wiki** - Auto-generated documentation
+- 🔍 **Semantic Search** - AI-powered search
 
-| Pain Point | TeamCord Solution |
-|-----------|-------------------|
-| Discord search is terrible | PostgreSQL full-text search — find anything, instantly |
-| Clients can't access your server safely | **Client Portal** — scoped channel access with invite tokens |
-| Decisions get lost in chat | **Decision Log** — a first-class log of every important decision |
-| AI bots cost money and need API keys | Built-in **AI Agent** powered by Ollama (local, free, private) |
-| Discord's servers hold your data | **Self-hosted** — your server, your data, forever |
+## Why TeamCord vs Discord?
 
-## 🚀 Quick Start
+Discord is failing professional teams. TeamCord fixes every pain point.
+
+| Pain Point | Discord | TeamCord |
+|-----------|---------|----------|
+| **Search** | Practically useless | PostgreSQL full-text search (when implemented) |
+| **Privacy** | Tracks all apps, shares data | Self-hosted, zero telemetry |
+| **Client Access** | Give full access or nothing | Client Portal (planned) |
+| **AI Assistant** | None (or paid bots) | Built-in Ollama agent (in progress) |
+| **Data Control** | Discord's servers | Your server, your data |
+| **Knowledge Mgmt** | Lost in chat | Decision log & wiki (planned) |
+
+## 🚀 Quick Start (Development)
+
+**Note:** This is an alpha release. Many features are incomplete. See [WHAT_TO_DO_NEXT.md](./WHAT_TO_DO_NEXT.md) for the roadmap.
+
+##
 
 ### Prerequisites
 
