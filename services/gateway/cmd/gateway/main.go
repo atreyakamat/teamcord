@@ -44,7 +44,7 @@ func main() {
 	})
 
 	log.Printf("Gateway starting on port %s", port)
-	err := http.ListenAndServe(":"+port, r)
+	err = http.ListenAndServe(":"+port, r)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}

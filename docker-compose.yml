@@ -2,10 +2,8 @@ services:
   # ─── Infrastructure ──────────────────────────────────────────────────────────
   
   postgres:
-    build:
-      context: .
-      dockerfile: infra/postgres/Dockerfile
-    container_name: teamcord-postgres
+    image: timescale/timescaledb-ha:pg16
+    container_name: nexus-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: teamcord
@@ -128,8 +126,8 @@ services:
 
   gateway:
     build:
-      context: .
-      dockerfile: services/gateway/Dockerfile
+      context: services/gateway
+      dockerfile: Dockerfile
     container_name: teamcord-gateway
     restart: unless-stopped
     environment:
@@ -147,8 +145,8 @@ services:
 
   messaging:
     build:
-      context: .
-      dockerfile: services/messaging/Dockerfile
+      context: services/messaging
+      dockerfile: Dockerfile
     container_name: teamcord-messaging
     restart: unless-stopped
     environment:
@@ -165,8 +163,8 @@ services:
 
   voice:
     build:
-      context: .
-      dockerfile: services/voice/Dockerfile
+      context: services/voice
+      dockerfile: Dockerfile
     container_name: teamcord-voice
     restart: unless-stopped
     environment:
@@ -184,8 +182,8 @@ services:
 
   ai-agent:
     build:
-      context: .
-      dockerfile: services/ai-agent/Dockerfile
+      context: services/ai-agent
+      dockerfile: Dockerfile
     container_name: teamcord-ai-agent
     restart: unless-stopped
     environment:
@@ -200,8 +198,8 @@ services:
 
   files:
     build:
-      context: .
-      dockerfile: services/files/Dockerfile
+      context: services/files
+      dockerfile: Dockerfile
     container_name: teamcord-files
     restart: unless-stopped
     environment:
@@ -216,15 +214,15 @@ services:
 
   web:
     build:
-      context: .
-      dockerfile: apps/web/Dockerfile
+      context: apps/web
+      dockerfile: Dockerfile
     container_name: teamcord-web
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:3001
       NEXT_PUBLIC_GATEWAY_URL: ws://localhost:3002
     ports:
-      - "3000:3000"
+      - "${WEB_PORT:-3010}:3000"
 
   # ─── Observability ──────────────────────────────────────────────────────────
 

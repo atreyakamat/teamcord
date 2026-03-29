@@ -9,8 +9,8 @@ RUN apk add --no-cache --virtual .build-deps \
     postgresql16-dev \
     && git clone --branch v0.7.0 https://github.com/pgvector/pgvector.git \
     && cd pgvector \
-    && make \
-    && make install \
+    && make LLVM=0 \
+    && make install LLVM=0 \
     && cd .. \
     && rm -rf pgvector \
     && apk del .build-deps

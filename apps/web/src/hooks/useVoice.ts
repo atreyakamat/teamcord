@@ -18,7 +18,7 @@ export const useVoice = (roomId: string) => {
       
       socketRef.current?.emit('joinRoom', { roomId }, async ({ rtpCapabilities }: any) => {
         const device = new mediasoupClient.Device();
-        await device.load({ rtpCapabilities });
+        await device.load({ routerRtpCapabilities: rtpCapabilities });
         deviceRef.current = device;
 
         // Create transports...
