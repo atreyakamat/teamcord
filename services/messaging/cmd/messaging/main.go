@@ -14,13 +14,19 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nexus/messaging/internal/channel"
 	"github.com/nexus/messaging/internal/db"
+	"github.com/nexus/messaging/internal/decision"
 	"github.com/nexus/messaging/internal/message"
+	"github.com/nexus/messaging/internal/thread"
+	"github.com/nexus/messaging/internal/workspace"
 )
 
 type Server struct {
-	repo         *message.Repository
-	channelRepo  *channel.Repository
-	js           nats.JetStreamContext
+	repo          *message.Repository
+	channelRepo   *channel.Repository
+	workspaceRepo *workspace.Repository
+	threadRepo    *thread.Repository
+	decisionRepo  *decision.Repository
+	js            nats.JetStreamContext
 }
 
 func main() {
@@ -49,9 +55,12 @@ func main() {
 	}
 
 	s := &Server{
-		repo:        &message.Repository{DB: database},
-		channelRepo: &channel.Repository{DB: database},
-		js:          js,
+		repo:          &message.Repository{DB: database},
+		channelRepo:   &channel.Repository{DB: database},
+		workspaceRepo: &workspace.Repository{DB: database},
+		threadRepo:    &thread.Repository{DB: database},
+		decisionRepo:  &decision.Repository{DB: database},
+		js:            js,
 	}
 
 	r := chi.NewRouter()
@@ -59,11 +68,19 @@ func main() {
 	r.Use(middleware.Recoverer)
 
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Route("/workspaces/{workspaceID}/channels", func(r chi.Router) {
-			r.Get("/", s.ListChannels)
-			r.Post("/", s.CreateChannel)
+		// Workspaces
+		r.Route("/workspaces", func(r chi.Router) {
+			r.Post("/", s.CreateWorkspace)
+			r.Route("/{workspaceID}", func(r chi.Router) {
+				r.Get("/", s.GetWorkspace)
+				r.Get("/channels", s.ListChannels)
+				r.Post("/channels", s.CreateChannel)
+				r.Get("/decisions", s.ListDecisions)
+				r.Post("/decisions", s.CreateDecision)
+			})
 		})
 
+		// Channels
 		r.Route("/channels/{channelID}", func(r chi.Router) {
 			r.Get("/", s.GetChannel)
 			r.Patch("/", s.UpdateChannel)
@@ -78,13 +95,53 @@ func main() {
 					r.Delete("/", s.DeleteMessage)
 				})
 			})
+
+			r.Route("/threads", func(r chi.Router) {
+				r.Get("/", s.ListThreads)
+				r.Post("/", s.CreateThread)
+			})
+		})
+
+		// Threads
+		r.Route("/threads/{threadID}", func(r chi.Router) {
+			r.Get("/", s.GetThread)
 		})
 	})
 
 	log.Printf("Messaging service starting on port %s", port)
-	http.ListenAndServe(":"+port, r)
+	err = http.ListenAndServe(":"+port, r)
+	if err != nil {
+		log.Fatal("ListenAndServe: ", err)
+	}
 }
 
+// -- Workspaces --
+func (s *Server) CreateWorkspace(w http.ResponseWriter, r *http.Request) {
+	var wk workspace.Workspace
+	if err := json.NewDecoder(r.Body).Decode(&wk); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := s.workspaceRepo.Create(r.Context(), &wk); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(wk)
+}
+
+func (s *Server) GetWorkspace(w http.ResponseWriter, r *http.Request) {
+	workspaceID, _ := strconv.ParseInt(chi.URLParam(r, "workspaceID"), 10, 64)
+	wk, err := s.workspaceRepo.Get(r.Context(), workspaceID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(wk)
+}
+
+// -- Channels --
 func (s *Server) CreateChannel(w http.ResponseWriter, r *http.Request) {
 	workspaceID, _ := strconv.ParseInt(chi.URLParam(r, "workspaceID"), 10, 64)
 	var c channel.Channel
@@ -97,16 +154,9 @@ func (s *Server) CreateChannel(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	// Fan-out
-	payload := map[string]interface{}{
-		"op": 0,
-		"t":  "CHANNEL_CREATE",
-		"d":  c,
-	}
+	payload := map[string]interface{}{"op": 0, "t": "CHANNEL_CREATE", "d": c}
 	data, _ := json.Marshal(payload)
 	s.js.Publish(fmt.Sprintf("workspace.%d", workspaceID), data)
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(c)
 }
@@ -144,16 +194,10 @@ func (s *Server) UpdateChannel(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	updated, _ := s.channelRepo.Get(r.Context(), channelID)
-	payload := map[string]interface{}{
-		"op": 0,
-		"t":  "CHANNEL_UPDATE",
-		"d":  updated,
-	}
+	payload := map[string]interface{}{"op": 0, "t": "CHANNEL_UPDATE", "d": updated}
 	data, _ := json.Marshal(payload)
 	s.js.Publish(fmt.Sprintf("workspace.%d", updated.WorkspaceID), data)
-
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -164,53 +208,33 @@ func (s *Server) DeleteChannel(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-
 	if err := s.channelRepo.Delete(r.Context(), channelID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	payload := map[string]interface{}{
-		"op": 0,
-		"t":  "CHANNEL_DELETE",
-		"d": map[string]interface{}{
-			"id":           channelID,
-			"workspace_id": c.WorkspaceID,
-		},
-	}
+	payload := map[string]interface{}{"op": 0, "t": "CHANNEL_DELETE", "d": map[string]interface{}{"id": channelID, "workspace_id": c.WorkspaceID}}
 	data, _ := json.Marshal(payload)
 	s.js.Publish(fmt.Sprintf("workspace.%d", c.WorkspaceID), data)
-
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// -- Messages --
 func (s *Server) CreateMessage(w http.ResponseWriter, r *http.Request) {
 	channelID, _ := strconv.ParseInt(chi.URLParam(r, "channelID"), 10, 64)
-	
 	var m message.Message
 	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	m.ChannelID = channelID
-	// TODO: Get author ID from auth context
 	m.AuthorID = 1 // Placeholder
-
 	if err := s.repo.Create(r.Context(), &m); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	// Publish to NATS for real-time fan-out
-	payload := map[string]interface{}{
-		"op": 0,
-		"t":  "MESSAGE_CREATE",
-		"d":  m,
-	}
+	payload := map[string]interface{}{"op": 0, "t": "MESSAGE_CREATE", "d": m}
 	data, _ := json.Marshal(payload)
-	subject := fmt.Sprintf("channel.%d", channelID)
-	s.js.Publish(subject, data)
-
+	s.js.Publish(fmt.Sprintf("channel.%d", channelID), data)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(m)
 }
@@ -226,13 +250,11 @@ func (s *Server) ListMessages(w http.ResponseWriter, r *http.Request) {
 		b, _ := strconv.ParseInt(bStr, 10, 64)
 		before = &b
 	}
-
 	msgs, err := s.repo.List(r.Context(), channelID, limit, before)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(msgs)
 }
@@ -261,49 +283,109 @@ func (s *Server) UpdateMessage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
 	if err := s.repo.Update(r.Context(), msgID, body.Content); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	// Fetch updated message for NATS
 	m, _ := s.repo.Get(r.Context(), msgID)
-	payload := map[string]interface{}{
-		"op": 0,
-		"t":  "MESSAGE_UPDATE",
-		"d":  m,
-	}
+	payload := map[string]interface{}{"op": 0, "t": "MESSAGE_UPDATE", "d": m}
 	data, _ := json.Marshal(payload)
 	s.js.Publish(fmt.Sprintf("channel.%d", m.ChannelID), data)
-
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *Server) DeleteMessage(w http.ResponseWriter, r *http.Request) {
 	msgID, _ := strconv.ParseInt(chi.URLParam(r, "messageID"), 10, 64)
-	
 	m, _ := s.repo.Get(r.Context(), msgID)
 	if m == nil {
 		http.NotFound(w, r)
 		return
 	}
-
 	if err := s.repo.Delete(r.Context(), msgID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	payload := map[string]interface{}{
-		"op": 0,
-		"t":  "MESSAGE_DELETE",
-		"d": map[string]interface{}{
-			"id":         msgID,
-			"channel_id": m.ChannelID,
-		},
-	}
+	payload := map[string]interface{}{"op": 0, "t": "MESSAGE_DELETE", "d": map[string]interface{}{"id": msgID, "channel_id": m.ChannelID}}
 	data, _ := json.Marshal(payload)
 	s.js.Publish(fmt.Sprintf("channel.%d", m.ChannelID), data)
-
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// -- Threads --
+func (s *Server) CreateThread(w http.ResponseWriter, r *http.Request) {
+	channelID, _ := strconv.ParseInt(chi.URLParam(r, "channelID"), 10, 64)
+	var t thread.Thread
+	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	t.ChannelID = channelID
+	if err := s.threadRepo.Create(r.Context(), &t); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	payload := map[string]interface{}{"op": 0, "t": "THREAD_CREATE", "d": t}
+	data, _ := json.Marshal(payload)
+	s.js.Publish(fmt.Sprintf("channel.%d", channelID), data)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(t)
+}
+
+func (s *Server) ListThreads(w http.ResponseWriter, r *http.Request) {
+	channelID, _ := strconv.ParseInt(chi.URLParam(r, "channelID"), 10, 64)
+	status := r.URL.Query().Get("status")
+	if status == "" {
+		status = "open"
+	}
+	threads, err := s.threadRepo.ListByChannel(r.Context(), channelID, status)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(threads)
+}
+
+func (s *Server) GetThread(w http.ResponseWriter, r *http.Request) {
+	threadID, _ := strconv.ParseInt(chi.URLParam(r, "threadID"), 10, 64)
+	t, err := s.threadRepo.Get(r.Context(), threadID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(t)
+}
+
+// -- Decisions --
+func (s *Server) CreateDecision(w http.ResponseWriter, r *http.Request) {
+	workspaceID, _ := strconv.ParseInt(chi.URLParam(r, "workspaceID"), 10, 64)
+	var d decision.Decision
+	if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	d.WorkspaceID = workspaceID
+	if err := s.decisionRepo.Create(r.Context(), &d); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if d.ChannelID != nil {
+		payload := map[string]interface{}{"op": 0, "t": "DECISION_LOGGED", "d": d}
+		data, _ := json.Marshal(payload)
+		s.js.Publish(fmt.Sprintf("channel.%d", *d.ChannelID), data)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(d)
+}
+
+func (s *Server) ListDecisions(w http.ResponseWriter, r *http.Request) {
+	workspaceID, _ := strconv.ParseInt(chi.URLParam(r, "workspaceID"), 10, 64)
+	decisions, err := s.decisionRepo.ListByWorkspace(r.Context(), workspaceID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(decisions)
 }

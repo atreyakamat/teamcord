@@ -83,9 +83,33 @@ func (c *Client) handlePayload(p protocol.GatewayPayload) {
 		b, _ := json.Marshal(ack)
 		c.send <- b
 	case protocol.OpIdentify:
-		// Handle authentication
+		// Handle authentication and send READY
 		log.Printf("Identify received from %s", c.ID)
-		// TODO: Validate token
+		
+		// In a real app, validate the token from p.D
+		// Let's assume it's valid and send the READY payload
+		
+		readyData := map[string]interface{}{
+			"v": 10,
+			"user": map[string]interface{}{
+				"id": "1", // Mock user ID
+				"username": "nexus_user",
+				"discriminator": "0001",
+				"bot": false,
+			},
+			"guilds": []interface{}{}, // Workspaces
+			"session_id": c.ID,
+		}
+
+		readyPayload := protocol.GatewayPayload{
+			Op: protocol.OpDispatch,
+			T:  func(s string) *string { return &s }(protocol.EventReady),
+			S:  func(i int) *int { return &i }(1),
+			D:  readyData,
+		}
+
+		b, _ := json.Marshal(readyPayload)
+		c.send <- b
 	}
 }
 

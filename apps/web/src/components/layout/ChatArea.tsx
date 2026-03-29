@@ -1,20 +1,50 @@
+import { useState } from 'react'
 import { Hash, Bell, Pin, Users, Search, Inbox, HelpCircle, PlusCircle, Gift, Sticker, Smile } from 'lucide-react'
 import MessageList from '../chat/MessageList'
+import { useChannelStore } from '../../stores/channels'
+import { useGatewayStore } from '../../stores/gateway'
 
 interface ChatAreaProps {
   onToggleMemberList: () => void
 }
 
 const ChatArea = ({ onToggleMemberList }: ChatAreaProps) => {
+  const selectedChannelId = useChannelStore((state) => state.selectedChannelId)
+  const channels = useChannelStore((state) => state.channels)
+  const channel = channels.find(c => c.id === selectedChannelId)
+  
+  const sendMessage = useGatewayStore((state) => state.sendMessage)
+  const [inputValue, setInputValue] = useState('')
+
+  const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && inputValue.trim() && selectedChannelId) {
+      // In a real app, we'd send to a REST API. For our rapid prototype, 
+      // we can simulate an optimistic dispatch or let the REST API trigger the NATS broadcast.
+      try {
+        await fetch(`http://localhost:3001/api/v1/channels/${selectedChannelId}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: inputValue,
+            type: 'default',
+          })
+        });
+        setInputValue('');
+      } catch (err) {
+        console.error('Failed to send message', err);
+      }
+    }
+  }
+
   return (
     <div className="flex flex-grow flex-col overflow-hidden bg-dc-primary">
-      {/* Header Bar - 48px */}
+      {/* Header Bar */}
       <header className="flex h-12 min-h-[48px] items-center justify-between border-b border-dc-tertiary px-4 shadow-sm">
         <div className="flex items-center space-x-2 truncate">
           <Hash className="text-dc-muted" size={24} />
-          <span className="font-bold text-white">announcements</span>
+          <span className="font-bold text-white">{channel?.name || 'unknown'}</span>
           <div className="mx-2 h-6 w-[1px] bg-dc-border" />
-          <span className="truncate text-sm text-dc-muted">Project Nexus news and updates</span>
+          <span className="truncate text-sm text-dc-muted">Channel description</span>
         </div>
         
         <div className="flex items-center space-x-4 text-dc-muted">
@@ -49,8 +79,11 @@ const ChatArea = ({ onToggleMemberList }: ChatAreaProps) => {
           </button>
           <input 
             type="text" 
-            placeholder="Message #announcements"
+            placeholder={`Message #${channel?.name || 'channel'}`}
             className="flex-grow bg-transparent text-dc-normal focus:outline-none placeholder:text-dc-muted"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
           />
           <div className="flex items-center space-x-3 text-dc-muted">
             <Gift size={24} className="hover:text-dc-normal cursor-pointer" />

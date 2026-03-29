@@ -1,26 +1,37 @@
+import { useEffect, useState } from 'react'
 import { Smile, Reply, Edit2, Trash2, MoreHorizontal } from 'lucide-react'
+import { useMessageStore } from '../../stores/messages'
+import { useChannelStore } from '../../stores/channels'
+import { useGatewayStore } from '../../stores/gateway'
 
 const MessageList = () => {
+  const selectedChannelId = useChannelStore((state) => state.selectedChannelId)
+  const messagesByChannel = useMessageStore((state) => state.messagesByChannel)
+  const connect = useGatewayStore((state) => state.connect)
+  
+  useEffect(() => {
+    connect() // Ensure Gateway is connected
+  }, [connect])
+
+  const messages = selectedChannelId ? (messagesByChannel[selectedChannelId] || []) : []
+
   return (
     <div className="flex flex-col px-4 py-4 space-y-4">
-      <Message 
-        author="atreyakamat" 
-        time="Today at 10:30 AM" 
-        content="Welcome to the Nexus announcements channel! 🚀" 
-        roleColor="#ED4245"
-      />
-      <Message 
-        author="Nexus Bot" 
-        time="Today at 10:31 AM" 
-        content="The initial deployment of the messaging service is complete. WebSocket gateway is now online and accepting connections." 
-        isBot
-      />
-      <Message 
-        author="atreyakamat" 
-        time="Today at 10:35 AM" 
-        content="Great work! Let's start building the voice and video services next. We'll be using mediasoup for the SFU." 
-        roleColor="#ED4245"
-      />
+      {messages.length === 0 ? (
+        <div className="text-dc-muted flex h-full items-center justify-center pt-20">
+          No messages here yet. Be the first to say hello!
+        </div>
+      ) : (
+        messages.map((msg) => (
+          <Message 
+            key={msg.id}
+            author={msg.author?.username || `User ${msg.author_id}`} 
+            time={new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} 
+            content={msg.content} 
+            isBot={msg.author_id === 0}
+          />
+        ))
+      )}
     </div>
   )
 }
@@ -66,26 +77,10 @@ const Message = ({ author, time, content, isBot, roleColor }: MessageProps) => {
           <span className="text-[12px] text-dc-muted">{time}</span>
         </div>
         <p className="whitespace-pre-wrap text-dc-normal leading-[1.375rem]">{content}</p>
-        
-        {/* Reactions placeholder */}
-        <div className="mt-1 flex flex-wrap gap-1">
-          <ReactionPill emoji="🚀" count={1} active />
-          <ReactionPill emoji="🔥" count={2} />
-        </div>
       </div>
     </div>
   )
 }
-
-const ReactionPill = ({ emoji, count, active }: { emoji: string, count: number, active?: boolean }) => (
-  <div className={`
-    flex h-6 items-center space-x-1 rounded px-2 text-xs font-medium cursor-pointer transition
-    ${active ? 'bg-[rgba(88,101,242,0.15)] border border-dc-blurple' : 'bg-[#2b2d31] hover:bg-[#37393f] border border-transparent'}
-  `}>
-    <span>{emoji}</span>
-    <span className={active ? 'text-dc-blurple' : 'text-dc-muted'}>{count}</span>
-  </div>
-)
 
 const IconButton = ({ icon }: { icon: React.ReactNode }) => (
   <button className="flex h-8 w-8 items-center justify-center rounded text-dc-muted transition hover:bg-dc-hover hover:text-dc-normal">
