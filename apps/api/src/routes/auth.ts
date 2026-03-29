@@ -7,7 +7,7 @@ import { nanoid } from "nanoid";
 
 const registerSchema = z.object({
   email: z.string().email(),
-  username: z.string().min(3).max(32).regex(/^[a-z0-9_-]+$/),
+  username: z.string().min(3).max(32).regex(/^[a-z0-9_-]+$/).optional(),
   displayName: z.string().min(1).max(64),
   password: z.string().min(8),
 });
@@ -44,7 +44,7 @@ export async function authRoutes(app: FastifyInstance) {
       .values({
         id: nanoid(),
         email: body.email,
-        username: body.username,
+        username: body.username || body.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, ''),
         displayName: body.displayName,
         passwordHash,
       })

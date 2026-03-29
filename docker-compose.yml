@@ -1,4 +1,22 @@
 services:
+  # ─── Caddy (Reverse Proxy + Auto-TLS) ──────────────────────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+      - api
+      - gateway
+    profiles:
+      - production
+
   # ─── PostgreSQL ───────────────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
@@ -22,7 +40,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
     volumes:
       - redis_data:/data
     ports:
@@ -31,6 +49,42 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 3s
+      retries: 5
+
+  # ─── NATS JetStream (message broker) ─────────────────────────────────────────
+  nats:
+    image: nats:2.10-alpine
+    restart: unless-stopped
+    command: 
+      - "--js"
+      - "--sd=/data"
+      - "-m=8222"
+    volumes:
+      - nats_data:/data
+    ports:
+      - "${NATS_PORT:-4222}:4222"
+      - "${NATS_MONITOR_PORT:-8222}:8222"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Meilisearch (full-text search) ──────────────────────────────────────────
+  meilisearch:
+    image: getmeili/meilisearch:v1.8
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-teamcord_meili_key}
+      MEILI_ENV: ${MEILI_ENV:-development}
+    volumes:
+      - meilisearch_data:/meili_data
+    ports:
+      - "${MEILI_PORT:-7700}:7700"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
       retries: 5
 
   # ─── MinIO (S3-compatible file storage) ─────────────────────────────────────
@@ -78,6 +132,14 @@ services:
     environment:
       DATABASE_URL: postgres://teamcord:${POSTGRES_PASSWORD:-teamcord_secret}@postgres:5432/teamcord
       REDIS_URL: redis://redis:6379
+      NATS_URL: nats://nats:4222
+      MEILISEARCH_URL: http://meilisearch:7700
+      MEILISEARCH_KEY: ${MEILI_MASTER_KEY:-teamcord_meili_key}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-teamcord}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-teamcord_secret}
+      MINIO_BUCKET: ${MINIO_BUCKET:-teamcord-files}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production-please}
       PORT: 3001
       HOST: 0.0.0.0
@@ -90,6 +152,10 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      meilisearch:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
@@ -105,6 +171,7 @@ services:
     restart: unless-stopped
     environment:
       REDIS_URL: redis://redis:6379
+      NATS_URL: nats://nats:4222
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production-please}
       GATEWAY_PORT: 3002
       HOST: 0.0.0.0
@@ -113,6 +180,8 @@ services:
       - "${GATEWAY_PORT:-3002}:3002"
     depends_on:
       redis:
+        condition: service_healthy
+      nats:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3002/health || true"]
@@ -128,7 +197,11 @@ services:
     restart: unless-stopped
     environment:
       OLLAMA_URL: http://ollama:11434
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      NATS_URL: nats://nats:4222
+      REDIS_URL: redis://redis:6379
+      API_URL: http://api:3001
       AGENT_PORT: 3003
       HOST: 0.0.0.0
       NODE_ENV: production
@@ -137,8 +210,40 @@ services:
       - "${AGENT_PORT:-3003}:3003"
     depends_on:
       - ollama
+      - nats
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── Voice/Video (mediasoup SFU) ──────────────────────────────────────────────
+  voice:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.voice
+    restart: unless-stopped
+    environment:
+      REDIS_URL: redis://redis:6379
+      NATS_URL: nats://nats:4222
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-please}
+      VOICE_PORT: 3004
+      RTC_MIN_PORT: 10000
+      RTC_MAX_PORT: 10100
+      ANNOUNCED_IP: ${ANNOUNCED_IP:-}
+      NODE_ENV: production
+    ports:
+      - "${VOICE_PORT:-3004}:3004"
+      - "10000-10100:10000-10100/udp"
+    depends_on:
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    profiles:
+      - voice
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -153,6 +258,7 @@ services:
       NEXT_PUBLIC_API_URL: ${API_URL:-http://localhost:3001}
       NEXT_PUBLIC_GATEWAY_URL: ${GATEWAY_URL:-ws://localhost:3002}
       NEXT_PUBLIC_AGENT_URL: ${AGENT_URL:-http://localhost:3003}
+      NEXT_PUBLIC_VOICE_URL: ${VOICE_URL:-ws://localhost:3004}
     ports:
       - "${WEB_PORT:-3000}:3000"
     depends_on:
@@ -167,5 +273,9 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  nats_data:
+  meilisearch_data:
   minio_data:
   ollama_data:
+  caddy_data:
+  caddy_config:

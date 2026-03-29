@@ -1,0 +1,51 @@
+# TeamCord Voice Service Dockerfile
+# mediasoup SFU for voice/video
+
+FROM node:20-alpine AS base
+RUN apk add --no-cache python3 make g++ linux-headers
+
+FROM base AS deps
+WORKDIR /app
+
+# Copy workspace package files
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/voice/package.json ./apps/voice/
+COPY packages/types/package.json ./packages/types/
+
+# Install dependencies
+RUN corepack enable pnpm && pnpm install --frozen-lockfile
+
+FROM base AS builder
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/voice/node_modules ./apps/voice/node_modules
+COPY --from=deps /app/packages/types/node_modules ./packages/types/node_modules
+
+# Copy source
+COPY packages/types ./packages/types
+COPY apps/voice ./apps/voice
+COPY tsconfig.base.json ./
+
+# Build
+RUN cd packages/types && npm run build 2>/dev/null || true
+RUN cd apps/voice && npm run build
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+# Runtime dependencies for mediasoup
+RUN apk add --no-cache python3 make g++ linux-headers
+
+ENV NODE_ENV=production
+
+COPY --from=builder /app/apps/voice/dist ./dist
+COPY --from=builder /app/apps/voice/package.json ./
+COPY --from=builder /app/apps/voice/node_modules ./node_modules
+
+USER node
+
+EXPOSE 3004
+EXPOSE 10000-10100/udp
+
+CMD ["node", "dist/index.js"]

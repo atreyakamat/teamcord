@@ -1,69 +1,302 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+/* ─── Discord Exact Color Tokens ───────────────────────────────────────────── */
 :root {
-  --bg-primary: #1a1d23;
-  --bg-secondary: #14161a;
-  --bg-tertiary: #0f1117;
-  --bg-hover: #2a2d35;
-  --bg-active: #3a3d45;
-
-  --text-primary: #e8eaed;
-  --text-secondary: #9ba3af;
-  --text-muted: #6b7280;
-
-  --accent: #5b7cfa;
-  --accent-hover: #4a6bf0;
-
-  --border: #2a2d35;
-  --danger: #ef4444;
-  --success: #22c55e;
-  --warning: #f59e0b;
-
-  --sidebar-width: 240px;
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  /* Brand colors */
+  --dc-blurple: #5865F2;
+  --dc-blurple-dark: #4752C4;
+  --dc-green: #57F287;
+  --dc-yellow: #FEE75C;
+  --dc-red: #ED4245;
+  --dc-fuchsia: #EB459E;
+  
+  /* Background colors - Dark theme */
+  --dc-bg-tertiary: #1E1F22;
+  --dc-bg-secondary: #2B2D31;
+  --dc-bg-primary: #313338;
+  --dc-bg-input: #383A40;
+  --dc-bg-hover: #35373C;
+  --dc-bg-selected: #404249;
+  --dc-bg-floating: #111214;
+  --dc-bg-message-hover: rgba(0, 0, 0, 0.06);
+  
+  /* Text colors */
+  --dc-text-normal: #DBDEE1;
+  --dc-text-muted: #949BA4;
+  --dc-text-link: #00A8FC;
+  --dc-text-header-secondary: #B5BAC1;
+  --dc-text-positive: #57F287;
+  --dc-text-danger: #F23F43;
+  
+  /* Border and dividers */
+  --dc-border: #3F4248;
+  --dc-channel-icon: #80848E;
+  
+  /* Status colors */
+  --dc-status-online: #23A55A;
+  --dc-status-idle: #F0B232;
+  --dc-status-dnd: #F23F43;
+  --dc-status-offline: #80848E;
+  
+  /* Interactive states */
+  --dc-interactive-normal: #B5BAC1;
+  --dc-interactive-hover: #DBDEE1;
+  --dc-interactive-active: #FFFFFF;
+  --dc-interactive-muted: #4E5058;
+  
+  /* Layout dimensions */
+  --server-rail-width: 72px;
+  --channel-sidebar-width: 240px;
+  --member-list-width: 240px;
+  --header-height: 48px;
+  --input-height: 44px;
+  --user-panel-height: 52px;
+  
+  /* Typography */
+  --font-primary: 'Inter', 'gg sans', 'Noto Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-code: 'JetBrains Mono', Consolas, 'Andale Mono WT', 'Andale Mono', monospace;
+  --font-size-sm: 12px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --line-height-normal: 1.375;
+  
+  /* Shadows */
+  --dc-elevation-low: 0 1px 0 rgba(4, 4, 5, 0.2), 0 1.5px 0 rgba(6, 6, 7, 0.05), 0 2px 0 rgba(4, 4, 5, 0.05);
+  --dc-elevation-high: 0 8px 16px rgba(0, 0, 0, 0.24);
+  
+  /* Animation */
+  --transition-fast: 100ms ease;
+  --transition-normal: 200ms ease;
 }
 
-body {
-  font-family: var(--font-sans);
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  height: 100vh;
+html, body, #__next {
+  height: 100%;
   overflow: hidden;
 }
 
+body {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-normal);
+  background: var(--dc-bg-tertiary);
+  color: var(--dc-text-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 a {
-  color: var(--accent);
+  color: var(--dc-text-link);
   text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
 }
 
 button {
   cursor: pointer;
   font-family: inherit;
+  border: none;
+  background: none;
 }
 
-input,
-textarea {
+input, textarea {
   font-family: inherit;
+  font-size: inherit;
 }
 
+/* ─── Custom Scrollbar ────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
   background: transparent;
+  border-radius: 4px;
+  margin: 4px 0;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
+  background: var(--dc-bg-tertiary);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+  background: var(--dc-interactive-muted);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ─── Selection ───────────────────────────────────────────────────────────── */
+::selection {
+  background: var(--dc-blurple);
+  color: white;
+}
+
+/* ─── Focus Styles ────────────────────────────────────────────────────────── */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--dc-blurple);
+  outline-offset: 2px;
+}
+
+/* ─── Utility Classes ─────────────────────────────────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ─── Discord Button Styles ───────────────────────────────────────────────── */
+.dc-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 2px 16px;
+  min-width: 96px;
+  min-height: 38px;
+  border-radius: 3px;
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.dc-button-primary {
+  background: var(--dc-blurple);
+  color: white;
+}
+
+.dc-button-primary:hover {
+  background: var(--dc-blurple-dark);
+}
+
+.dc-button-secondary {
+  background: var(--dc-bg-secondary);
+  color: var(--dc-text-normal);
+}
+
+.dc-button-secondary:hover {
+  background: var(--dc-bg-hover);
+}
+
+.dc-button-danger {
+  background: var(--dc-red);
+  color: white;
+}
+
+.dc-button-danger:hover {
+  background: #c9383a;
+}
+
+.dc-button-link {
+  background: transparent;
+  color: var(--dc-text-link);
+  padding: 2px 4px;
+  min-width: auto;
+}
+
+.dc-button-link:hover {
+  text-decoration: underline;
+}
+
+/* ─── Discord Input Styles ────────────────────────────────────────────────── */
+.dc-input {
+  width: 100%;
+  padding: 10px;
+  background: var(--dc-bg-tertiary);
+  border: none;
+  border-radius: 3px;
+  color: var(--dc-text-normal);
+  font-size: var(--font-size-lg);
+}
+
+.dc-input::placeholder {
+  color: var(--dc-text-muted);
+}
+
+.dc-input:focus {
+  outline: none;
+}
+
+/* ─── Discord Label ───────────────────────────────────────────────────────── */
+.dc-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--dc-text-header-secondary);
+}
+
+/* ─── Loading Spinner ─────────────────────────────────────────────────────── */
+@keyframes dc-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dc-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--dc-bg-secondary);
+  border-top-color: var(--dc-blurple);
+  border-radius: 50%;
+  animation: dc-spinner 0.8s linear infinite;
+}
+
+/* ─── Typing indicator animation ──────────────────────────────────────────── */
+@keyframes dc-typing-bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-4px);
+  }
+}
+
+.dc-typing-dot {
+  width: 4px;
+  height: 4px;
+  background: var(--dc-text-muted);
+  border-radius: 50%;
+  animation: dc-typing-bounce 1.4s ease-in-out infinite;
+}
+
+.dc-typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dc-typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
 }
