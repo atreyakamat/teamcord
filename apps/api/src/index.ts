@@ -12,9 +12,17 @@ import { authRoutes } from "./routes/auth.js";
 import { workspaceRoutes } from "./routes/workspaces.js";
 import { channelRoutes } from "./routes/channels.js";
 import { messageRoutes } from "./routes/messages.js";
+import { reactionRoutes } from "./routes/reactions.js";
 import { searchRoutes } from "./routes/search.js";
 import { clientPortalRoutes } from "./routes/client-portal.js";
 import { decisionRoutes } from "./routes/decisions.js";
+import { threadRoutes } from "./routes/threads.js";
+import { inviteRoutes } from "./routes/invites.js";
+import { fileRoutes } from "./routes/files.js";
+import { userRoutes } from "./routes/users.js";
+import { wikiRoutes } from "./routes/wiki.js";
+import { pinsRoutes } from "./routes/pins.js";
+import { rolesRoutes } from "./routes/roles.js";
 
 const PORT = Number(process.env["PORT"] ?? 3001);
 const HOST = process.env["HOST"] ?? "0.0.0.0";
@@ -105,6 +113,14 @@ async function buildApp() {
   await app.register(workspaceRoutes, { prefix: "/api/v1/workspaces" });
   await app.register(channelRoutes, { prefix: "/api/v1/channels" });
   await app.register(messageRoutes, { prefix: "/api/v1/messages" });
+  await app.register(reactionRoutes, { prefix: "/api/v1/messages" });
+  await app.register(threadRoutes, { prefix: "/api/v1" });
+  await app.register(inviteRoutes, { prefix: "/api/v1/invites" });
+  await app.register(fileRoutes, { prefix: "/api/v1/files" });
+  await app.register(userRoutes, { prefix: "/api/v1/users" });
+  await app.register(wikiRoutes, { prefix: "/api/v1" });
+  await app.register(pinsRoutes, { prefix: "/api/v1" });
+  await app.register(rolesRoutes, { prefix: "/api/v1" });
   await app.register(searchRoutes, { prefix: "/api/v1/search" });
   await app.register(clientPortalRoutes, {
     prefix: "/api/v1/client-portals",

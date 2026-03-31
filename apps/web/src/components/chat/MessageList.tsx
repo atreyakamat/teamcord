@@ -1,91 +1,112 @@
-import { useEffect, useState } from 'react'
-import { Smile, Reply, Edit2, Trash2, MoreHorizontal } from 'lucide-react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useMessageStore } from '../../stores/messages'
 import { useChannelStore } from '../../stores/channels'
 import { useGatewayStore } from '../../stores/gateway'
+import Message from './Message'
 
 const MessageList = () => {
   const selectedChannelId = useChannelStore((state) => state.selectedChannelId)
   const messagesByChannel = useMessageStore((state) => state.messagesByChannel)
+  const loading = useMessageStore((state) => state.loading)
+  const hasMore = useMessageStore((state) => state.hasMore)
+  const fetchMessages = useMessageStore((state) => state.fetchMessages)
   const connect = useGatewayStore((state) => state.connect)
+  const subscribeChannel = useGatewayStore((state) => state.subscribeChannel)
   
+  const listRef = useRef<HTMLDivElement>(null)
+  const loadMoreRef = useRef<HTMLDivElement>(null)
+
+  // Connect to gateway on mount
   useEffect(() => {
-    connect() // Ensure Gateway is connected
+    connect()
   }, [connect])
 
-  const messages = selectedChannelId ? (messagesByChannel[selectedChannelId] || []) : []
+  // Fetch messages and subscribe when channel changes
+  useEffect(() => {
+    if (selectedChannelId) {
+      fetchMessages(selectedChannelId)
+      subscribeChannel(selectedChannelId)
+    }
+  }, [selectedChannelId, fetchMessages, subscribeChannel])
 
-  return (
-    <div className="flex flex-col px-4 py-4 space-y-4">
-      {messages.length === 0 ? (
-        <div className="text-dc-muted flex h-full items-center justify-center pt-20">
-          No messages here yet. Be the first to say hello!
-        </div>
-      ) : (
-        messages.map((msg) => (
-          <Message 
-            key={msg.id}
-            author={msg.author?.username || `User ${msg.author_id}`} 
-            time={new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} 
-            content={msg.content} 
-            isBot={msg.author_id === 0}
-          />
-        ))
-      )}
-    </div>
-  )
-}
+  // Infinite scroll - load more when scrolling to top
+  const handleScroll = useCallback(() => {
+    if (!listRef.current || !selectedChannelId) return
+    
+    const { scrollTop } = listRef.current
+    if (scrollTop < 100 && hasMore[selectedChannelId] && !loading[selectedChannelId]) {
+      const messages = messagesByChannel[selectedChannelId] || []
+      if (messages.length > 0) {
+        fetchMessages(selectedChannelId, messages[0].id)
+      }
+    }
+  }, [selectedChannelId, hasMore, loading, messagesByChannel, fetchMessages])
 
-interface MessageProps {
-  author: string
-  time: string
-  content: string
-  isBot?: boolean
-  roleColor?: string
-}
-
-const Message = ({ author, time, content, isBot, roleColor }: MessageProps) => {
-  return (
-    <div className="group relative flex w-full items-start px-4 py-[2px] hover:bg-[#2e3035]">
-      {/* Action Bar */}
-      <div className="absolute -top-4 right-4 z-10 hidden rounded bg-dc-bg-secondary p-0.5 shadow-lg group-hover:flex">
-        <IconButton icon={<Smile size={18} />} />
-        <IconButton icon={<Reply size={18} />} />
-        <IconButton icon={<Edit2 size={18} />} />
-        <IconButton icon={<Trash2 size={18} />} />
-        <IconButton icon={<MoreHorizontal size={18} />} />
-      </div>
-
-      <div className="mr-4 mt-1 flex-shrink-0">
-        <img 
-          src={`https://api.dicebear.com/8.x/avataaars/svg?seed=${author}`} 
-          className="h-10 w-10 rounded-full" 
-          alt={author} 
-        />
-      </div>
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    if (listRef.current) {
+      const { scrollHeight, scrollTop, clientHeight } = listRef.current
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100
       
-      <div className="flex flex-col min-w-0">
-        <div className="flex items-center space-x-2">
-          <span className="font-bold hover:underline cursor-pointer" style={{ color: roleColor || 'var(--dc-text-normal)' }}>
-            {author}
-          </span>
-          {isBot && (
-            <span className="rounded bg-dc-blurple px-1 py-[2px] text-[10px] font-bold text-white uppercase">
-              Bot
-            </span>
-          )}
-          <span className="text-[12px] text-dc-muted">{time}</span>
+      if (isNearBottom) {
+        listRef.current.scrollTop = listRef.current.scrollHeight
+      }
+    }
+  }, [messagesByChannel, selectedChannelId])
+
+  const messages = selectedChannelId ? (messagesByChannel[selectedChannelId] || []) : []
+  const isLoading = selectedChannelId ? loading[selectedChannelId] : false
+
+  // Group messages by author and time (messages within 7 minutes of each other)
+  const groupedMessages = messages.reduce((groups, message, index) => {
+    const prevMessage = messages[index - 1]
+    const isGrouped = prevMessage && 
+      prevMessage.authorId === message.authorId &&
+      new Date(message.createdAt).getTime() - new Date(prevMessage.createdAt).getTime() < 7 * 60 * 1000
+
+    groups.push({ message, isGrouped })
+    return groups
+  }, [] as { message: typeof messages[0]; isGrouped: boolean }[])
+
+  return (
+    <div 
+      ref={listRef}
+      className="flex flex-col overflow-y-auto px-0 pb-4"
+      onScroll={handleScroll}
+    >
+      {/* Load more indicator */}
+      {isLoading && (
+        <div className="flex justify-center py-4">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-dc-blurple border-t-transparent" />
         </div>
-        <p className="whitespace-pre-wrap text-dc-normal leading-[1.375rem]">{content}</p>
-      </div>
+      )}
+
+      {/* Empty state */}
+      {messages.length === 0 && !isLoading && (
+        <div className="flex flex-col items-center justify-center pt-20 text-center">
+          <div className="text-6xl mb-4">👋</div>
+          <h3 className="text-2xl font-bold text-white mb-2">Welcome to the channel!</h3>
+          <p className="text-dc-muted">This is the beginning of the conversation. Be the first to say hello!</p>
+        </div>
+      )}
+
+      {/* Messages */}
+      {groupedMessages.map(({ message, isGrouped }) => (
+        <Message
+          key={message.id}
+          message={message}
+          isGrouped={isGrouped}
+          onReply={(msg) => {
+            // Could implement reply functionality
+            console.log('Reply to:', msg)
+          }}
+        />
+      ))}
+
+      {/* Bottom padding for scroll */}
+      <div className="h-6" />
     </div>
   )
 }
-
-const IconButton = ({ icon }: { icon: React.ReactNode }) => (
-  <button className="flex h-8 w-8 items-center justify-center rounded text-dc-muted transition hover:bg-dc-hover hover:text-dc-normal">
-    {icon}
-  </button>
-)
 
 export default MessageList

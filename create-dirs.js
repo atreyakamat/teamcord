@@ -1,6 +1,22 @@
 const fs = require('fs');
 const path = require('path');
 
+// Create additional directories for desktop and notifications
+const extraDirs = [
+  'g:\\Projects\\teamcord\\apps\\desktop\\src-tauri\\src',
+  'g:\\Projects\\teamcord\\apps\\desktop\\src-tauri\\icons',
+  'g:\\Projects\\teamcord\\services\\notifications\\src',
+];
+
+extraDirs.forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    console.log(`✓ Created: ${dir}`);
+  } else {
+    console.log(`✓ Already exists: ${dir}`);
+  }
+});
+
 const basePath = 'g:\\Projects\\teamcord\\apps\\web\\src';
 const dirs = [
   'types',
