@@ -49,7 +49,7 @@ export const useGatewayStore = create<GatewayState>((set, get) => ({
         token: token || 'guest_token',
         properties: { 
           os: navigator.platform, 
-          browser: 'teamcord-web', 
+          browser: 'nexus-web', 
           device: 'desktop' 
         },
         compress: false,
@@ -153,7 +153,7 @@ function handleDispatch(
       const token = useAuthStore.getState().token;
       get().sendMessage(2, {
         token: token || 'guest_token',
-        properties: { os: 'web', browser: 'teamcord-web', device: 'desktop' },
+        properties: { os: 'web', browser: 'nexus-web', device: 'desktop' },
       });
       break;
       

@@ -8,14 +8,18 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"crypto/rand"
+	"encoding/hex"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/nats-io/nats.go"
 	"github.com/nexus/messaging/internal/channel"
+	"github.com/nexus/messaging/internal/clientportal"
 	"github.com/nexus/messaging/internal/db"
 	"github.com/nexus/messaging/internal/decision"
 	"github.com/nexus/messaging/internal/message"
+	"github.com/nexus/messaging/internal/search"
 	"github.com/nexus/messaging/internal/thread"
 	"github.com/nexus/messaging/internal/workspace"
 )
@@ -26,6 +30,8 @@ type Server struct {
 	workspaceRepo *workspace.Repository
 	threadRepo    *thread.Repository
 	decisionRepo  *decision.Repository
+	searchRepo    *search.Repository
+	portalRepo    *clientportal.Repository
 	js            nats.JetStreamContext
 }
 
@@ -37,6 +43,8 @@ func main() {
 
 	dbURL := os.Getenv("DATABASE_URL")
 	natsURL := os.Getenv("NATS_URL")
+	meiliURL := os.Getenv("MEILISEARCH_URL")
+	meiliKey := os.Getenv("MEILISEARCH_KEY")
 
 	ctx := context.Background()
 	database, err := db.NewDatabase(ctx, dbURL)
@@ -54,12 +62,20 @@ func main() {
 		log.Fatal(err)
 	}
 
+	var searchRepo *search.Repository
+	if meiliURL != "" {
+		searchRepo = search.NewRepository(meiliURL, meiliKey)
+		log.Println("Meilisearch connected")
+	}
+
 	s := &Server{
 		repo:          &message.Repository{DB: database},
 		channelRepo:   &channel.Repository{DB: database},
 		workspaceRepo: &workspace.Repository{DB: database},
 		threadRepo:    &thread.Repository{DB: database},
 		decisionRepo:  &decision.Repository{DB: database},
+		searchRepo:    searchRepo,
+		portalRepo:    &clientportal.Repository{DB: database},
 		js:            js,
 	}
 
@@ -68,6 +84,9 @@ func main() {
 	r.Use(middleware.Recoverer)
 
 	r.Route("/api/v1", func(r chi.Router) {
+		// Public routes
+		r.Get("/client-portals/verify/{token}", s.VerifyClientPortal)
+
 		// Workspaces
 		r.Route("/workspaces", func(r chi.Router) {
 			r.Post("/", s.CreateWorkspace)
@@ -77,6 +96,11 @@ func main() {
 				r.Post("/channels", s.CreateChannel)
 				r.Get("/decisions", s.ListDecisions)
 				r.Post("/decisions", s.CreateDecision)
+				r.Get("/search", s.SearchMessages)
+				
+				// Client Portals
+				r.Get("/client-portals", s.ListClientPortals)
+				r.Post("/client-portals", s.CreateClientPortal)
 			})
 		})
 
@@ -115,6 +139,59 @@ func main() {
 	}
 }
 
+func generateToken() string {
+	bytes := make([]byte, 16)
+	if _, err := rand.Read(bytes); err != nil {
+		return "fallback_token"
+	}
+	return hex.EncodeToString(bytes)
+}
+
+// -- Client Portals --
+func (s *Server) CreateClientPortal(w http.ResponseWriter, r *http.Request) {
+	workspaceID, _ := strconv.ParseInt(chi.URLParam(r, "workspaceID"), 10, 64)
+	var p clientportal.ClientPortal
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	p.WorkspaceID = workspaceID
+	p.InviteToken = generateToken()
+	
+	if err := s.portalRepo.Create(r.Context(), &p); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(p)
+}
+
+func (s *Server) ListClientPortals(w http.ResponseWriter, r *http.Request) {
+	workspaceID, _ := strconv.ParseInt(chi.URLParam(r, "workspaceID"), 10, 64)
+	portals, err := s.portalRepo.ListByWorkspace(r.Context(), workspaceID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(portals)
+}
+
+func (s *Server) VerifyClientPortal(w http.ResponseWriter, r *http.Request) {
+	token := chi.URLParam(r, "token")
+	p, err := s.portalRepo.GetByToken(r.Context(), token)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if p == nil {
+		http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(p)
+}
+
 // -- Workspaces --
 func (s *Server) CreateWorkspace(w http.ResponseWriter, r *http.Request) {
 	var wk workspace.Workspace
@@ -139,6 +216,32 @@ func (s *Server) GetWorkspace(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(wk)
+}
+
+// -- Search --
+func (s *Server) SearchMessages(w http.ResponseWriter, r *http.Request) {
+	if s.searchRepo == nil {
+		http.Error(w, "Search not configured", http.StatusNotImplemented)
+		return
+	}
+
+	workspaceID, _ := strconv.ParseInt(chi.URLParam(r, "workspaceID"), 10, 64)
+	query := r.URL.Query().Get("q")
+	filters := r.URL.Query().Get("filters")
+
+	if query == "" {
+		http.Error(w, "Query parameter 'q' is required", http.StatusBadRequest)
+		return
+	}
+
+	res, err := s.searchRepo.Search(r.Context(), workspaceID, query, filters)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
 }
 
 // -- Channels --
@@ -232,6 +335,14 @@ func (s *Server) CreateMessage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	if s.searchRepo != nil {
+		c, err := s.channelRepo.Get(r.Context(), channelID)
+		if err == nil && c != nil {
+			go s.searchRepo.IndexMessage(context.Background(), &m, c.WorkspaceID)
+		}
+	}
+
 	payload := map[string]interface{}{"op": 0, "t": "MESSAGE_CREATE", "d": m}
 	data, _ := json.Marshal(payload)
 	s.js.Publish(fmt.Sprintf("channel.%d", channelID), data)
@@ -288,6 +399,14 @@ func (s *Server) UpdateMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	m, _ := s.repo.Get(r.Context(), msgID)
+	
+	if s.searchRepo != nil {
+		c, err := s.channelRepo.Get(r.Context(), m.ChannelID)
+		if err == nil && c != nil {
+			go s.searchRepo.IndexMessage(context.Background(), m, c.WorkspaceID)
+		}
+	}
+
 	payload := map[string]interface{}{"op": 0, "t": "MESSAGE_UPDATE", "d": m}
 	data, _ := json.Marshal(payload)
 	s.js.Publish(fmt.Sprintf("channel.%d", m.ChannelID), data)

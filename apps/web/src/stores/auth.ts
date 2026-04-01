@@ -40,14 +40,14 @@ interface AuthState {
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export const useAuthStore = create<AuthState>((set, get) => ({
-  token: localStorage.getItem('teamcord_token') || null,
+  token: localStorage.getItem('nexus_token') || null,
   user: null,
   workspaces: [],
-  isAuthenticated: !!localStorage.getItem('teamcord_token'),
+  isAuthenticated: !!localStorage.getItem('nexus_token'),
   isLoading: false,
   
   setToken: (token: string) => {
-    localStorage.setItem('teamcord_token', token);
+    localStorage.setItem('nexus_token', token);
     set({ token, isAuthenticated: true });
   },
   
@@ -56,7 +56,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setWorkspaces: (workspaces: Workspace[]) => set({ workspaces }),
   
   logout: () => {
-    localStorage.removeItem('teamcord_token');
+    localStorage.removeItem('nexus_token');
     set({ token: null, user: null, workspaces: [], isAuthenticated: false });
   },
   

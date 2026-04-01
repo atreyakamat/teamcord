@@ -1,10 +1,10 @@
 {
-  "name": "teamcord",
+  "name": "nexus",
   "version": "0.1.0",
   "private": true,
-  "description": "TeamCord - Discord but for small teams and agencies",
+  "description": "Nexus - Discord but for small teams and agencies",
   "keywords": ["communication", "team", "chat", "discord-alternative", "self-hosted"],
-  "author": "TeamCord Team",
+  "author": "Nexus Team",
   "license": "MIT",
   "engines": {
     "node": ">=20.0.0",
@@ -13,14 +13,14 @@
   "packageManager": "pnpm@9.15.9",
   "scripts": {
     "dev": "turbo run dev",
-    "dev:web": "pnpm --filter @teamcord/web dev",
+    "dev:web": "pnpm --filter @nexus/web dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "clean": "turbo run clean && rm -rf node_modules",
-    "db:push": "pnpm --filter @teamcord/db db:push",
-    "db:migrate": "pnpm --filter @teamcord/db db:migrate",
-    "db:studio": "pnpm --filter @teamcord/db db:studio",
+    "db:push": "pnpm --filter @nexus/db db:push",
+    "db:migrate": "pnpm --filter @nexus/db db:migrate",
+    "db:studio": "pnpm --filter @nexus/db db:studio",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down"
   },

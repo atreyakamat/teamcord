@@ -470,7 +470,7 @@ export enum GatewayOpcode {
   INVALID_SESSION = 9,   // Server → Client: Session invalidated
   HELLO = 10,            // Server → Client: Hello (contains heartbeat_interval)
   HEARTBEAT_ACK = 11,    // Server → Client: Heartbeat acknowledged
-  // TeamCord extensions (100+)
+  // Nexus extensions (100+)
   SUBSCRIBE = 100,       // Client → Server: Subscribe to channel
   UNSUBSCRIBE = 101,     // Client → Server: Unsubscribe from channel
   TYPING = 102,          // Client → Server: Typing indicator
@@ -513,7 +513,7 @@ export type GatewayEventType =
   // Session
   | "READY"
   | "RESUMED"
-  // TeamCord extensions
+  // Nexus extensions
   | "DECISION_CREATE"
   | "DECISION_DELETE"
   | "WIKI_UPDATE"

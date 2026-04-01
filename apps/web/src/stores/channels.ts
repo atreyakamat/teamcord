@@ -29,12 +29,14 @@ interface ChannelState {
   channels: Channel[];
   categories: Category[];
   selectedChannelId: string | null;
+  activeVoiceChannelId: string | null;
   selectedWorkspaceId: string | null;
   typingUsers: Record<string, TypingUser[]>; // channelId -> users
   
   setChannels: (channels: Channel[]) => void;
   setCategories: (categories: Category[]) => void;
   setSelectedChannel: (id: string | null) => void;
+  setActiveVoiceChannel: (id: string | null) => void;
   setSelectedWorkspace: (id: string | null) => void;
   addChannel: (channel: Channel) => void;
   updateChannel: (channel: Partial<Channel> & { id: string }) => void;
@@ -47,6 +49,7 @@ export const useChannelStore = create<ChannelState>((set, get) => ({
   channels: [],
   categories: [],
   selectedChannelId: null,
+  activeVoiceChannelId: null,
   selectedWorkspaceId: null,
   typingUsers: {},
   
@@ -55,6 +58,8 @@ export const useChannelStore = create<ChannelState>((set, get) => ({
   setCategories: (categories) => set({ categories }),
   
   setSelectedChannel: (id) => set({ selectedChannelId: id }),
+
+  setActiveVoiceChannel: (id) => set({ activeVoiceChannelId: id }),
   
   setSelectedWorkspace: (id) => set({ selectedWorkspaceId: id }),
   
