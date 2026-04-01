@@ -4,23 +4,18 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/nexus/gateway/internal/auth"
 	"github.com/nexus/gateway/internal/protocol"
 )
 
 const (
-	// Time allowed to write a message to the peer.
-	writeWait = 10 * time.Second
-
-	// Time allowed to read the next pong message from the peer.
-	pongWait = 60 * time.Second
-
-	// Send pings to peer with this period. Must be less than pongWait.
-	pingPeriod = (pongWait * 9) / 10
-
-	// Maximum message size allowed from peer.
+	writeWait      = 10 * time.Second
+	pongWait       = 60 * time.Second
+	pingPeriod     = (pongWait * 9) / 10
 	maxMessageSize = 4096
 )
 
@@ -28,26 +23,27 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		return true // For development
+		return true // Allow all for now
 	},
 }
 
-// Client is a middleman between the websocket connection and the hub.
 type Client struct {
 	Hub *Hub
 
-	// The websocket connection.
 	conn *websocket.Conn
-
-	// Buffered channel of outbound messages.
 	send chan []byte
 
-	// Client metadata
-	ID     string
-	UserID string
+	ID                 string
+	UserID             string
+	SessionID          string
+	Identified         bool
+	LastHeartbeat      time.Time
+	WorkspaceIDs       map[string]bool
+	SubscribedChannels map[string]bool
+
+	mu sync.RWMutex
 }
 
-// readPump pumps messages from the websocket connection to the hub.
 func (c *Client) readPump() {
 	defer func() {
 		c.Hub.unregister <- c
@@ -55,7 +51,11 @@ func (c *Client) readPump() {
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
-	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+	c.conn.SetPongHandler(func(string) error {
+		c.conn.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
+
 	for {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
@@ -64,7 +64,7 @@ func (c *Client) readPump() {
 			}
 			break
 		}
-		
+
 		var payload protocol.GatewayPayload
 		if err := json.Unmarshal(message, &payload); err != nil {
 			log.Printf("unmarshal error: %v", err)
@@ -76,29 +76,58 @@ func (c *Client) readPump() {
 }
 
 func (c *Client) handlePayload(p protocol.GatewayPayload) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	switch p.Op {
 	case protocol.OpHeartbeat:
-		// Respond with HeartbeatAck
+		c.LastHeartbeat = time.Now()
 		ack := protocol.GatewayPayload{Op: protocol.OpHeartbeatAck}
 		b, _ := json.Marshal(ack)
 		c.send <- b
+
 	case protocol.OpIdentify:
-		// Handle authentication and send READY
-		log.Printf("Identify received from %s", c.ID)
-		
-		// In a real app, validate the token from p.D
-		// Let's assume it's valid and send the READY payload
-		
+		if c.Identified {
+			return
+		}
+
+		var identifyData map[string]interface{}
+		b, _ := json.Marshal(p.D)
+		json.Unmarshal(b, &identifyData)
+
+		tokenObj, ok := identifyData["token"].(string)
+		if !ok {
+			c.sendInvalidSession(false)
+			return
+		}
+
+		claims, err := auth.VerifyToken(tokenObj)
+		if err != nil {
+			log.Printf("Identify failed: %v", err)
+			c.sendInvalidSession(false)
+			// Send close frame
+			c.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(4003, "Invalid token"))
+			return
+		}
+
+		c.UserID = claims.Subject
+		c.Identified = true
+
+		for _, wsID := range claims.Workspaces {
+			c.WorkspaceIDs[wsID] = true
+		}
+
+		log.Printf("Client %s identified as user %s", c.ID, c.UserID)
+
+		// Send READY
 		readyData := map[string]interface{}{
-			"v": 10,
+			"v": 1,
 			"user": map[string]interface{}{
-				"id": "1", // Mock user ID
-				"username": "nexus_user",
+				"id":            c.UserID,
+				"username":      "User",
 				"discriminator": "0001",
-				"bot": false,
 			},
-			"guilds": []interface{}{}, // Workspaces
-			"session_id": c.ID,
+			"session_id": c.SessionID,
 		}
 
 		readyPayload := protocol.GatewayPayload{
@@ -108,24 +137,50 @@ func (c *Client) handlePayload(p protocol.GatewayPayload) {
 			D:  readyData,
 		}
 
-		b, _ := json.Marshal(readyPayload)
+		b, _ = json.Marshal(readyPayload)
 		c.send <- b
+
+	case 100: // SUBSCRIBE
+		var subData map[string]interface{}
+		b, _ := json.Marshal(p.D)
+		json.Unmarshal(b, &subData)
+		if chID, ok := subData["channel_id"].(string); ok {
+			c.SubscribedChannels[chID] = true
+			c.Hub.SubscribeChannel(chID, c)
+		}
+
+	case 101: // UNSUBSCRIBE
+		var unsubData map[string]interface{}
+		b, _ := json.Marshal(p.D)
+		json.Unmarshal(b, &unsubData)
+		if chID, ok := unsubData["channel_id"].(string); ok {
+			delete(c.SubscribedChannels, chID)
+			c.Hub.UnsubscribeChannel(chID, c)
+		}
 	}
 }
 
-// writePump pumps messages from the hub to the websocket connection.
+func (c *Client) sendInvalidSession(resumable bool) {
+	payload := protocol.GatewayPayload{
+		Op: protocol.OpInvalidSession,
+		D:  resumable,
+	}
+	b, _ := json.Marshal(payload)
+	c.send <- b
+}
+
 func (c *Client) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
 		c.conn.Close()
 	}()
+
 	for {
 		select {
 		case message, ok := <-c.send:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
-				// The hub closed the channel.
 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
@@ -136,7 +191,6 @@ func (c *Client) writePump() {
 			}
 			w.Write(message)
 
-			// Add queued chat messages to the current websocket message.
 			n := len(c.send)
 			for i := 0; i < n; i++ {
 				w.Write([]byte{'\n'})
@@ -155,21 +209,30 @@ func (c *Client) writePump() {
 	}
 }
 
-// ServeWs handles websocket requests from the peer.
 func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	client := &Client{Hub: hub, conn: conn, send: make(chan []byte, 256), ID: time.Now().String()}
+
+	sessionID := time.Now().Format("20060102150405") + "rand"
+
+	client := &Client{
+		Hub:                hub,
+		conn:               conn,
+		send:               make(chan []byte, 256),
+		ID:                 time.Now().String(), // simple id
+		SessionID:          sessionID,
+		LastHeartbeat:      time.Now(),
+		WorkspaceIDs:       make(map[string]bool),
+		SubscribedChannels: make(map[string]bool),
+	}
 	client.Hub.register <- client
 
-	// Allow collection of memory referenced by the caller by doing all work in
-	// new goroutines.
 	go client.writePump()
 	go client.readPump()
-	
+
 	// Send HELLO
 	hello := protocol.GatewayPayload{
 		Op: protocol.OpHello,
@@ -179,4 +242,17 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	}
 	b, _ := json.Marshal(hello)
 	client.send <- b
+
+	// Check if token in URL query
+	token := r.URL.Query().Get("token")
+	if token != "" {
+		// Mock an identify event to process it identically
+		identData := protocol.GatewayPayload{
+			Op: protocol.OpIdentify,
+			D: map[string]interface{}{
+				"token": token,
+			},
+		}
+		client.handlePayload(identData)
+	}
 }
