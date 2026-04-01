@@ -10,4 +10,4 @@ export function createDb(connectionString: string) {
 }
 
 export * from "./schema/index.js";
-export { sql, eq, and, or, desc, asc, like, ilike, inArray, gte, lte } from "drizzle-orm";
+export { sql, eq, and, or, desc, asc, like, ilike, inArray, gte, lte, lt, gt, isNull, isNotNull } from "drizzle-orm";
