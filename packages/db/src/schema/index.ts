@@ -31,6 +31,8 @@ export const channelTypeEnum = pgEnum("channel_type", [
   "forum",
   "announcement",
   "client-portal",
+  "whiteboard",
+  "kanban",
 ]);
 
 export const messageTypeEnum = pgEnum("message_type", [
@@ -39,6 +41,8 @@ export const messageTypeEnum = pgEnum("message_type", [
   "file",
   "decision",
   "thread_starter",
+  "whiteboard_update",
+  "kanban_update",
 ]);
 
 export const workspacePlanEnum = pgEnum("workspace_plan", [

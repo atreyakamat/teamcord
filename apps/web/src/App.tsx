@@ -4,6 +4,8 @@ import ChannelSidebar from './components/layout/ChannelSidebar'
 import ChatArea from './components/layout/ChatArea'
 import MemberList from './components/layout/MemberList'
 import { VoiceChannel } from './components/voice/VoiceChannel'
+import { Whiteboard } from './components/pm/Whiteboard'
+import { Kanban } from './components/pm/Kanban'
 import { useChannelStore } from './stores/channels'
 
 function App() {
@@ -12,8 +14,36 @@ function App() {
 
   const selectedChannel = channels.find(c => c.id === selectedChannelId)
   
-  // If no real channels are loaded yet but mock-voice is selected
-  const isVoiceSelected = selectedChannel?.type === 'voice' || selectedChannelId === 'mock-voice'
+  // Logic to determine what component to render in the main view
+  const renderMainContent = () => {
+    // 1. Voice Channel
+    if (selectedChannel?.type === 'voice' || selectedChannelId === 'mock-voice') {
+      return (
+        <VoiceChannel 
+          channelId={selectedChannelId || activeVoiceChannelId || 'mock'} 
+          onLeave={() => setActiveVoiceChannel(null)} 
+        />
+      )
+    }
+
+    // 2. Whiteboard
+    if (selectedChannel?.type === 'whiteboard' || selectedChannelId === 'mock-whiteboard') {
+      return <Whiteboard channelId={selectedChannelId || 'mock'} />
+    }
+
+    // 3. Kanban Board
+    if (selectedChannel?.type === 'kanban' || selectedChannelId === 'mock-kanban') {
+      return <Kanban channelId={selectedChannelId || 'mock'} />
+    }
+
+    // 4. Default: Text Chat
+    return (
+      <>
+        <ChatArea onToggleMemberList={() => setShowMemberList(!showMemberList)} />
+        {showMemberList && <MemberList />}
+      </>
+    )
+  }
 
   return (
     <div className="flex h-full w-full select-none overflow-hidden bg-dc-tertiary">
@@ -26,18 +56,7 @@ function App() {
 
         {/* Main Content Area */}
         <main className="flex flex-grow overflow-hidden bg-dc-primary">
-          {isVoiceSelected ? (
-            <VoiceChannel 
-              channelId={selectedChannelId || activeVoiceChannelId || 'mock'} 
-              onLeave={() => setActiveVoiceChannel(null)} 
-            />
-          ) : (
-            <>
-              <ChatArea onToggleMemberList={() => setShowMemberList(!showMemberList)} />
-              {/* Member List - 240px */}
-              {showMemberList && <MemberList />}
-            </>
-          )}
+          {renderMainContent()}
         </main>
       </div>
     </div>

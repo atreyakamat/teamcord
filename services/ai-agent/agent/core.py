@@ -8,7 +8,7 @@ from langchain_ollama import ChatOllama
 from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.agents import create_tool_calling_agent, AgentExecutor
-from agent.tools.tools import summarise_thread, log_decision, web_search, execute_code, draft_message
+from agent.tools.tools import summarise_thread, log_decision, web_search, execute_code, draft_message, create_diagram
 from langchain_core.tools import BaseTool
 
 def load_plugins():
@@ -36,7 +36,7 @@ def load_plugins():
 class NexusAgent:
     def __init__(self):
         self.provider = os.getenv("AI_PROVIDER", "ollama")
-        self.tools = [summarise_thread, log_decision, web_search, execute_code, draft_message]
+        self.tools = [summarise_thread, log_decision, web_search, execute_code, draft_message, create_diagram]
         self.tools.extend(load_plugins())
         
         print(f"Agent loaded with tools: {[t.name for t in self.tools]}")

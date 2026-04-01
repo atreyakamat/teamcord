@@ -1,4 +1,4 @@
-import { ChevronDown, Hash, Volume2, Settings, Mic, Headphones } from 'lucide-react'
+import { ChevronDown, Hash, Volume2, Settings, Mic, Headphones, Layout, PencilRuler } from 'lucide-react'
 import { useChannelStore } from '../../stores/channels'
 import { useEffect } from 'react'
 
@@ -18,8 +18,8 @@ const ChannelSidebar = () => {
     fetchChannels("1")
   }, [fetchChannels])
 
-  const handleChannelClick = (id: string, isVoice: boolean) => {
-    if (isVoice) {
+  const handleChannelClick = (id: string, type: string) => {
+    if (type === 'voice') {
       setActiveVoiceChannel(id)
     }
     setSelectedChannel(id)
@@ -46,8 +46,8 @@ const ChannelSidebar = () => {
                 key={channel.id}
                 name={channel.name} 
                 active={selectedChannelId === channel.id} 
-                isVoice={channel.type === 'voice'}
-                onClick={() => handleChannelClick(channel.id, channel.type === 'voice')}
+                type={channel.type}
+                onClick={() => handleChannelClick(channel.id, channel.type)}
               />
             ))}
           </div>
@@ -66,8 +66,8 @@ const ChannelSidebar = () => {
                   key={channel.id}
                   name={channel.name} 
                   active={selectedChannelId === channel.id} 
-                  isVoice={channel.type === 'voice'}
-                  onClick={() => handleChannelClick(channel.id, channel.type === 'voice')}
+                  type={channel.type}
+                  onClick={() => handleChannelClick(channel.id, channel.type)}
                 />
               ))}
             </div>
@@ -79,19 +79,26 @@ const ChannelSidebar = () => {
           <section>
             <div className="flex items-center px-2 py-1 text-[12px] font-bold uppercase tracking-wider text-dc-muted hover:text-white cursor-pointer">
               <ChevronDown size={12} className="mr-1" />
-              <span>Mock Channels</span>
+              <span>Planning Tools</span>
             </div>
             <div className="space-y-[2px]">
               <ChannelRow 
-                name="general" 
-                active={selectedChannelId === 'mock-text'} 
-                onClick={() => setSelectedChannel('mock-text')} 
+                name="whiteboard-v1" 
+                type="whiteboard"
+                active={selectedChannelId === 'mock-whiteboard'} 
+                onClick={() => handleChannelClick('mock-whiteboard', 'whiteboard')} 
+              />
+              <ChannelRow 
+                name="sprint-kanban" 
+                type="kanban"
+                active={selectedChannelId === 'mock-kanban'} 
+                onClick={() => handleChannelClick('mock-kanban', 'kanban')} 
               />
               <ChannelRow 
                 name="Gaming" 
-                isVoice 
+                type="voice" 
                 active={selectedChannelId === 'mock-voice'} 
-                onClick={() => handleChannelClick('mock-voice', true)} 
+                onClick={() => handleChannelClick('mock-voice', 'voice')} 
               />
             </div>
           </section>
@@ -136,7 +143,16 @@ const ChannelSidebar = () => {
   )
 }
 
-const ChannelRow = ({ name, active, isVoice, onClick }: { name: string; active?: boolean; isVoice?: boolean; onClick?: () => void }) => {
+const ChannelRow = ({ name, active, type, onClick }: { name: string; active?: boolean; type?: string; onClick?: () => void }) => {
+  const getIcon = () => {
+    switch (type) {
+      case 'voice': return <Volume2 size={20} className="mr-2 opacity-70" />;
+      case 'whiteboard': return <PencilRuler size={20} className="mr-2 opacity-70" />;
+      case 'kanban': return <Layout size={20} className="mr-2 opacity-70" />;
+      default: return <Hash size={20} className="mr-2 opacity-70" />;
+    }
+  }
+
   return (
     <div 
       onClick={onClick}
@@ -145,7 +161,7 @@ const ChannelRow = ({ name, active, isVoice, onClick }: { name: string; active?:
         ${active ? 'bg-dc-selected text-white' : 'text-dc-muted hover:bg-dc-hover hover:text-dc-normal'}
       `}
     >
-      {isVoice ? <Volume2 size={20} className="mr-2 opacity-70" /> : <Hash size={20} className="mr-2 opacity-70" />}
+      {getIcon()}
       <span className="font-medium">{name}</span>
     </div>
   )

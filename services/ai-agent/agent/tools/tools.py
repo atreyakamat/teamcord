@@ -46,3 +46,10 @@ def execute_code(code: str, language: str) -> str:
 def draft_message(brief: str, tone: str = "professional", format: str = "message") -> str:
     """Drafts a message, document, or email in the specified tone."""
     return f"[DRAFT - {tone} {format}]\nHello team,\n\nRegarding the brief: {brief}\n\nPlease let me know your thoughts."
+
+@tool
+def create_diagram(description: str, type: str = "mermaid") -> str:
+    """Generates a diagram layout based on a description. Supports 'mermaid' (for flowcharts/sequences) or 'excalidraw' (for UI wireframes)."""
+    if type == "mermaid":
+        return f"```mermaid\ngraph TD\n  A[Start] --> B({description})\n  B --> C[End]\n```"
+    return f"Successfully drafted an Excalidraw wireframe for: {description}. You can now view it in the whiteboard channel."
