@@ -18,10 +18,9 @@ const ChatArea = ({ onToggleMemberList }: ChatAreaProps) => {
 
   const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && inputValue.trim() && selectedChannelId) {
-      // In a real app, we'd send to a REST API. For our rapid prototype, 
-      // we can simulate an optimistic dispatch or let the REST API trigger the NATS broadcast.
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001'
       try {
-        await fetch(`http://localhost:3001/api/v1/channels/${selectedChannelId}/messages`, {
+        await fetch(`${apiUrl}/api/v1/channels/${selectedChannelId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

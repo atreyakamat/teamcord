@@ -14,8 +14,6 @@
   "scripts": {
     "dev": "turbo run dev",
     "dev:web": "pnpm --filter @teamcord/web dev",
-    "dev:api": "pnpm --filter @teamcord/api dev",
-    "dev:gateway": "pnpm --filter @teamcord/gateway dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
@@ -24,8 +22,7 @@
     "db:migrate": "pnpm --filter @teamcord/db db:migrate",
     "db:studio": "pnpm --filter @teamcord/db db:studio",
     "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down",
-    "generate": "node generate-sources.js && node generate-sources-2.js"
+    "docker:down": "docker compose down"
   },
   "devDependencies": {
     "turbo": "^2.3.3",
