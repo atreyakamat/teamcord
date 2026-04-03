@@ -14,6 +14,9 @@
   "scripts": {
     "dev": "corepack pnpm --parallel --filter @teamcord/types --filter @teamcord/db --filter @teamcord/web dev",
     "dev:web": "corepack pnpm --filter @teamcord/web dev",
+    "dev:messaging": "cd services/messaging && go run ./cmd/messaging",
+    "dev:gateway": "cd services/gateway && go run ./cmd/gateway",
+    "dev:voice": "cd services/voice && npm run dev",
     "build": "corepack pnpm --filter @teamcord/types build && corepack pnpm --filter @teamcord/db build && corepack pnpm --filter @teamcord/web build && corepack pnpm --filter appsdesktop build",
     "lint": "corepack pnpm -r --if-present lint",
     "test": "corepack pnpm -r --if-present test",
