@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import * as mediasoupClient from 'mediasoup-client';
 import { io, Socket } from 'socket.io-client';
+import { VOICE_SOCKET_PATH, VOICE_URL } from '../lib/config';
 
 export interface Peer {
   id: string;
@@ -29,7 +30,9 @@ export const useVoice = () => {
 
   // Initialize socket connection
   useEffect(() => {
-    socketRef.current = io(import.meta.env.VITE_VOICE_URL || 'http://localhost:3004');
+    socketRef.current = io(VOICE_URL, {
+      path: VOICE_SOCKET_PATH,
+    });
 
     socketRef.current.on('connect', () => {
       console.log('Connected to voice service signaling server');

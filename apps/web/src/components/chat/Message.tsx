@@ -4,6 +4,7 @@ import { useMessageStore, type Message as MessageType } from '../../stores/messa
 import { useAuthStore } from '../../stores/auth';
 import EmojiPicker from './EmojiPicker';
 import ReactionList from './ReactionList';
+import { buildApiUrl } from '../../lib/config';
 
 interface MessageProps {
   message: MessageType;
@@ -51,7 +52,7 @@ export default function Message({ message, isGrouped = false, onReply, onEdit }:
   const handleReaction = async (emoji: string) => {
     try {
       await fetch(
-        `http://localhost:3001/api/v1/messages/${message.channelId}/${message.id}/reactions/${encodeURIComponent(emoji)}`,
+        buildApiUrl(`/api/v1/messages/${message.channelId}/${message.id}/reactions/${encodeURIComponent(emoji)}`),
         { method: 'PUT', headers: { 'Content-Type': 'application/json' } }
       );
       setShowEmojiPicker(false);
@@ -69,7 +70,7 @@ export default function Message({ message, isGrouped = false, onReply, onEdit }:
     
     try {
       await fetch(
-        `http://localhost:3001/api/v1/channels/${message.channelId}/messages/${message.id}`,
+        buildApiUrl(`/api/v1/channels/${message.channelId}/messages/${message.id}`),
         { 
           method: 'PATCH', 
           headers: { 'Content-Type': 'application/json' },
@@ -87,7 +88,7 @@ export default function Message({ message, isGrouped = false, onReply, onEdit }:
     
     try {
       await fetch(
-        `http://localhost:3001/api/v1/channels/${message.channelId}/messages/${message.id}`,
+        buildApiUrl(`/api/v1/channels/${message.channelId}/messages/${message.id}`),
         { method: 'DELETE' }
       );
     } catch (err) {

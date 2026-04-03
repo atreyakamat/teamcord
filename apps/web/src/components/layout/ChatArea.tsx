@@ -3,6 +3,7 @@ import { Hash, Bell, Pin, Users, Search, Inbox, HelpCircle, PlusCircle, Gift, St
 import MessageList from '../chat/MessageList'
 import { useChannelStore } from '../../stores/channels'
 import { useGatewayStore } from '../../stores/gateway'
+import { buildApiUrl } from '../../lib/config'
 
 interface ChatAreaProps {
   onToggleMemberList: () => void
@@ -18,9 +19,8 @@ const ChatArea = ({ onToggleMemberList }: ChatAreaProps) => {
 
   const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && inputValue.trim() && selectedChannelId) {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001'
       try {
-        await fetch(`${apiUrl}/api/v1/channels/${selectedChannelId}/messages`, {
+        await fetch(buildApiUrl(`/api/v1/channels/${selectedChannelId}/messages`), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

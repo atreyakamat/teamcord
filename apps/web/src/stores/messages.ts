@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { buildApiUrl } from '../lib/config';
 
 export interface MessageAuthor {
   id: string;
@@ -181,7 +182,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     setLoading(channelId, true);
     
     try {
-      const url = new URL(`http://localhost:3001/api/v1/channels/${channelId}/messages`);
+      const url = new URL(buildApiUrl(`/api/v1/channels/${channelId}/messages`));
       if (before) url.searchParams.set('before', before);
       url.searchParams.set('limit', '50');
       

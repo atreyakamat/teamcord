@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth';
+import { buildApiUrl } from '../../lib/config';
 
 interface Reaction {
   emoji: string;
@@ -24,7 +25,7 @@ export default function ReactionList({ reactions, messageId, channelId, onAddRea
     try {
       const method = hasReacted ? 'DELETE' : 'PUT';
       await fetch(
-        `http://localhost:3001/api/v1/messages/${channelId}/${messageId}/reactions/${encodeURIComponent(emoji)}`,
+        buildApiUrl(`/api/v1/messages/${channelId}/${messageId}/reactions/${encodeURIComponent(emoji)}`),
         { method, headers: { 'Content-Type': 'application/json' } }
       );
     } catch (err) {

@@ -1,4 +1,4 @@
-import { ChevronDown, Hash, Volume2, Settings, Mic, Headphones, Layout, PencilRuler } from 'lucide-react'
+import { ChevronDown, Hash, Volume2, Settings, Mic, Headphones } from 'lucide-react'
 import { useChannelStore } from '../../stores/channels'
 import { useEffect } from 'react'
 
@@ -21,6 +21,8 @@ const ChannelSidebar = () => {
   const handleChannelClick = (id: string, type: string) => {
     if (type === 'voice') {
       setActiveVoiceChannel(id)
+    } else if (activeVoiceChannelId === id) {
+      setActiveVoiceChannel(null)
     }
     setSelectedChannel(id)
   }
@@ -74,34 +76,11 @@ const ChannelSidebar = () => {
           </section>
         ))}
 
-        {/* Fallback mock channels if empty */}
+        {/* Empty state */}
         {categories.length === 0 && uncategorized.length === 0 && (
-          <section>
-            <div className="flex items-center px-2 py-1 text-[12px] font-bold uppercase tracking-wider text-dc-muted hover:text-white cursor-pointer">
-              <ChevronDown size={12} className="mr-1" />
-              <span>Planning Tools</span>
-            </div>
-            <div className="space-y-[2px]">
-              <ChannelRow 
-                name="whiteboard-v1" 
-                type="whiteboard"
-                active={selectedChannelId === 'mock-whiteboard'} 
-                onClick={() => handleChannelClick('mock-whiteboard', 'whiteboard')} 
-              />
-              <ChannelRow 
-                name="sprint-kanban" 
-                type="kanban"
-                active={selectedChannelId === 'mock-kanban'} 
-                onClick={() => handleChannelClick('mock-kanban', 'kanban')} 
-              />
-              <ChannelRow 
-                name="Gaming" 
-                type="voice" 
-                active={selectedChannelId === 'mock-voice'} 
-                onClick={() => handleChannelClick('mock-voice', 'voice')} 
-              />
-            </div>
-          </section>
+          <div className="rounded-lg border border-dashed border-dc-border bg-[rgba(30,31,34,0.6)] px-3 py-4 text-sm text-dc-muted">
+            No channels are available for this workspace yet.
+          </div>
         )}
       </div>
 
@@ -147,8 +126,6 @@ const ChannelRow = ({ name, active, type, onClick }: { name: string; active?: bo
   const getIcon = () => {
     switch (type) {
       case 'voice': return <Volume2 size={20} className="mr-2 opacity-70" />;
-      case 'whiteboard': return <PencilRuler size={20} className="mr-2 opacity-70" />;
-      case 'kanban': return <Layout size={20} className="mr-2 opacity-70" />;
       default: return <Hash size={20} className="mr-2 opacity-70" />;
     }
   }

@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
+  path: '/voice/socket.io',
   cors: { origin: '*' },
 });
 

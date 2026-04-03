@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { buildApiUrl } from '../lib/config';
 
 export interface User {
   id: string;
@@ -37,8 +38,6 @@ interface AuthState {
   fetchWorkspaces: () => Promise<void>;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: localStorage.getItem('nexus_token') || null,
   user: null,
@@ -63,7 +62,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   login: async (email: string, password: string) => {
     set({ isLoading: true });
     try {
-      const res = await fetch(`${API_URL}/api/v1/auth/login`, {
+      const res = await fetch(buildApiUrl('/api/v1/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -93,7 +92,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   register: async (email: string, username: string, password: string) => {
     set({ isLoading: true });
     try {
-      const res = await fetch(`${API_URL}/api/v1/auth/register`, {
+      const res = await fetch(buildApiUrl('/api/v1/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, username, password }),
@@ -122,7 +121,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!token) return;
     
     try {
-      const res = await fetch(`${API_URL}/api/v1/users/@me`, {
+      const res = await fetch(buildApiUrl('/api/v1/users/@me'), {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -145,7 +144,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!token) return;
     
     try {
-      const res = await fetch(`${API_URL}/api/v1/workspaces/@me`, {
+      const res = await fetch(buildApiUrl('/api/v1/workspaces/@me'), {
         headers: { Authorization: `Bearer ${token}` },
       });
       

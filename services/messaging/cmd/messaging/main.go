@@ -83,6 +83,11 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+
 	r.Route("/api/v1", func(r chi.Router) {
 		// Public routes
 		r.Get("/client-portals/verify/{token}", s.VerifyClientPortal)

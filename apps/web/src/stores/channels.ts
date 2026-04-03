@@ -1,11 +1,12 @@
 import { create } from 'zustand';
+import { buildApiUrl } from '../lib/config';
 
 export interface Channel {
   id: string;
   workspaceId: string;
   name: string;
   description?: string;
-  type: 'text' | 'voice' | 'video' | 'stage' | 'forum' | 'announcement' | 'client-portal';
+  type: 'category' | 'text' | 'voice' | 'video' | 'stage' | 'forum' | 'announcement' | 'client-portal';
   isPrivate: boolean;
   position: number;
   parentId?: string; // Category ID
@@ -111,7 +112,7 @@ export const useChannelStore = create<ChannelState>((set, get) => ({
   
   fetchChannels: async (workspaceId) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/v1/workspaces/${workspaceId}/channels`);
+      const res = await fetch(buildApiUrl(`/api/v1/workspaces/${workspaceId}/channels`));
       if (!res.ok) throw new Error('Failed to fetch channels');
       
       const { data } = await res.json();

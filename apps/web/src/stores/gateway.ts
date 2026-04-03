@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { useAuthStore } from './auth';
 import { useMessageStore } from './messages';
 import { useChannelStore } from './channels';
+import { GATEWAY_URL } from '../lib/config';
 
 interface GatewayState {
   socket: WebSocket | null;
@@ -37,8 +38,7 @@ export const useGatewayStore = create<GatewayState>((set, get) => ({
       return;
     }
 
-    const wsUrl = import.meta.env.VITE_GATEWAY_URL || 'ws://localhost:3002/gateway';
-    const ws = new WebSocket(wsUrl);
+    const ws = new WebSocket(GATEWAY_URL);
 
     ws.onopen = () => {
       set({ connected: true, socket: ws, reconnectAttempts: 0 });
