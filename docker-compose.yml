@@ -3,25 +3,25 @@ services:
   
   postgres:
     image: timescale/timescaledb-ha:pg16
-    container_name: nexus-postgres
+    container_name: teamcord-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: nexus
-      POSTGRES_USER: nexus
+      POSTGRES_DB: teamcord
+      POSTGRES_USER: teamcord
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexus_secret}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U nexus -d nexus"]
+      test: ["CMD-SHELL", "pg_isready -U teamcord -d teamcord"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: nexus-redis
+    container_name: teamcord-redis
     restart: unless-stopped
     command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru --appendonly yes
     volumes:
@@ -36,7 +36,7 @@ services:
 
   nats:
     image: nats:2.10-alpine
-    container_name: nexus-nats
+    container_name: teamcord-nats
     restart: unless-stopped
     command: ["--js", "--sd=/data", "-m=8222"]
     volumes:
@@ -52,7 +52,7 @@ services:
 
   meilisearch:
     image: getmeili/meilisearch:v1.8
-    container_name: nexus-meilisearch
+    container_name: teamcord-meilisearch
     restart: unless-stopped
     environment:
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-nexus_meili_key}
@@ -69,11 +69,11 @@ services:
 
   minio:
     image: minio/minio:latest
-    container_name: nexus-minio
+    container_name: teamcord-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-nexus}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-teamcord}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-nexus_secret}
     volumes:
       - minio_data:/data
@@ -88,15 +88,15 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:24.0
-    container_name: nexus-keycloak
+    container_name: teamcord-keycloak
     command: start-dev
     restart: unless-stopped
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-nexus_admin_secret}
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/nexus
-      KC_DB_USERNAME: nexus
+      KC_DB_URL: jdbc:postgresql://postgres:5432/teamcord
+      KC_DB_USERNAME: teamcord
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-nexus_secret}
     ports:
       - "${KEYCLOAK_PORT:-8080}:8080"
@@ -106,7 +106,7 @@ services:
 
   ollama:
     image: ollama/ollama:latest
-    container_name: nexus-ollama
+    container_name: teamcord-ollama
     restart: unless-stopped
     volumes:
       - ollama_data:/root/.ollama
@@ -115,20 +115,20 @@ services:
 
   searxng:
     image: searxng/searxng:latest
-    container_name: nexus-searxng
+    container_name: teamcord-searxng
     restart: unless-stopped
     volumes:
       - ./infra/searxng:/etc/searxng:rw
     ports:
       - "8081:8080"
 
-  # ─── Nexus Services ──────────────────────────────────────────────────────
+  # ─── TeamCord Services ──────────────────────────────────────────────────────
 
   gateway:
     build:
       context: services/gateway
       dockerfile: Dockerfile
-    container_name: nexus-gateway
+    container_name: teamcord-gateway
     restart: unless-stopped
     environment:
       REDIS_URL: redis://redis:6379
@@ -147,10 +147,10 @@ services:
     build:
       context: services/messaging
       dockerfile: Dockerfile
-    container_name: nexus-messaging
+    container_name: teamcord-messaging
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://nexus:${POSTGRES_PASSWORD:-nexus_secret}@postgres:5432/nexus?sslmode=disable
+      DATABASE_URL: postgres://teamcord:${POSTGRES_PASSWORD:-nexus_secret}@postgres:5432/teamcord?sslmode=disable
       NATS_URL: nats://nats:4222
       REDIS_URL: redis://redis:6379
       MEILISEARCH_URL: http://meilisearch:7700
@@ -165,7 +165,7 @@ services:
     build:
       context: services/voice
       dockerfile: Dockerfile
-    container_name: nexus-voice
+    container_name: teamcord-voice
     restart: unless-stopped
     environment:
       NATS_URL: nats://nats:4222
@@ -184,7 +184,7 @@ services:
     build:
       context: services/ai-agent
       dockerfile: Dockerfile
-    container_name: nexus-ai-agent
+    container_name: teamcord-ai-agent
     restart: unless-stopped
     environment:
       OLLAMA_URL: http://ollama:11434
@@ -200,11 +200,11 @@ services:
     build:
       context: services/files
       dockerfile: Dockerfile
-    container_name: nexus-files
+    container_name: teamcord-files
     restart: unless-stopped
     environment:
-      MINIO_ENDPOINT: nexus-minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-nexus}
+      MINIO_ENDPOINT: teamcord-minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-teamcord}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-nexus_secret}
     depends_on:
       minio:
@@ -216,7 +216,7 @@ services:
     build:
       context: apps/web
       dockerfile: Dockerfile
-    container_name: nexus-web
+    container_name: teamcord-web
     restart: unless-stopped
     environment:
       VITE_API_URL: http://localhost:3001
@@ -228,7 +228,7 @@ services:
 
   prometheus:
     image: prom/prometheus:latest
-    container_name: nexus-prometheus
+    container_name: teamcord-prometheus
     restart: unless-stopped
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -237,7 +237,7 @@ services:
 
   grafana:
     image: grafana/grafana:latest
-    container_name: nexus-grafana
+    container_name: teamcord-grafana
     restart: unless-stopped
     volumes:
       - grafana_data:/var/lib/grafana
@@ -248,7 +248,7 @@ services:
 
   loki:
     image: grafana/loki:latest
-    container_name: nexus-loki
+    container_name: teamcord-loki
     restart: unless-stopped
     command: -config.file=/etc/loki/local-config.yaml
     ports:

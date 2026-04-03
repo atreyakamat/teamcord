@@ -35,7 +35,7 @@ const (
 	EventMemberUpdate        = "WORKSPACE_MEMBER_UPDATE"
 	EventMemberRemove        = "WORKSPACE_MEMBER_REMOVE"
 	
-	// Nexus extensions
+	// TeamCord extensions
 	EventAiAgentTyping       = "AI_AGENT_TYPING"
 	EventDecisionLogged      = "DECISION_LOGGED"
 	EventWikiUpdated         = "WIKI_UPDATED"

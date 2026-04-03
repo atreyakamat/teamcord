@@ -8,7 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/nats-io/nats.go"
-	"github.com/nexus/gateway/internal/ws"
+	"github.com/teamcord/gateway/internal/ws"
 )
 
 func main() {

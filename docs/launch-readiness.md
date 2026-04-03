@@ -1,10 +1,10 @@
-# Nexus Launch Readiness
+# TeamCord Launch Readiness
 
 Audit date: 2026-04-03
 
 ## Verdict
 
-Nexus is not ready for a full `v1.0` launch against the PRD yet.
+TeamCord is not ready for a full `v1.0` launch against the PRD yet.
 
 The repo now has a proper public landing page and a cleaner `/app` product shell, but there are still launch-blocking gaps in auth, reactions, direct messages, screen sharing, PWA support, and file handling.
 
@@ -52,7 +52,7 @@ The repo now has a proper public landing page and a cleaner `/app` product shell
 
 ## Verification Performed
 
-- `corepack pnpm --filter @nexus/web build`
+- `corepack pnpm --filter @teamcord/web build`
   Result: passed.
 
 - `corepack pnpm install`

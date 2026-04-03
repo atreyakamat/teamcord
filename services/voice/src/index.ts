@@ -162,6 +162,37 @@ io.on('connection', (socket) => {
   let currentRoomId: string | null = null;
   let currentUserId: string = peerId;
 
+  const cleanupPeer = async () => {
+    if (!currentRoomId) {
+      return;
+    }
+
+    const room = rooms.get(currentRoomId);
+    if (!room) {
+      currentRoomId = null;
+      return;
+    }
+
+    const peer = room.peers.get(peerId);
+    if (peer) {
+      for (const transport of peer.transports.values()) {
+        transport.close();
+      }
+      room.peers.delete(peerId);
+
+      socket.to(currentRoomId).emit('peerLeft', { peerId, userId: currentUserId });
+
+      if (room.peers.size === 0) {
+        room.router.close();
+        rooms.delete(currentRoomId);
+        console.log(`Room ${currentRoomId} closed (empty)`);
+      }
+    }
+
+    await publishVoiceState(null, currentUserId, {});
+    currentRoomId = null;
+  };
+
   socket.on('joinRoom', async ({ roomId, userId }, callback) => {
     try {
       currentRoomId = roomId;
@@ -187,7 +218,7 @@ io.on('connection', (socket) => {
       });
 
       // Get existing producers in the room
-      const existingProducers: { peerId: string; producerId: string; kind: string }[] = [];
+      const existingProducers: { peerId: string; producerId: string; kind: string; userId: string }[] = [];
       for (const [pId, p] of room.peers) {
         if (pId !== peerId) {
           for (const [prodId, producer] of p.producers) {
@@ -195,6 +226,7 @@ io.on('connection', (socket) => {
               peerId: pId,
               producerId: prodId,
               kind: producer.kind,
+              userId: p.userId,
             });
           }
         }
@@ -207,6 +239,16 @@ io.on('connection', (socket) => {
     } catch (error) {
       console.error('Error joining room:', error);
       callback({ error: 'Failed to join room' });
+    }
+  });
+
+  socket.on('leaveRoom', async (callback) => {
+    try {
+      await cleanupPeer();
+      callback?.({ success: true });
+    } catch (error) {
+      console.error('Error leaving room:', error);
+      callback?.({ error: 'Failed to leave room' });
     }
   });
 
@@ -369,31 +411,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', async () => {
-    if (currentRoomId) {
-      const room = rooms.get(currentRoomId);
-      if (room) {
-        const peer = room.peers.get(peerId);
-        if (peer) {
-          // Close all transports (this closes producers and consumers)
-          for (const transport of peer.transports.values()) {
-            transport.close();
-          }
-          room.peers.delete(peerId);
-          
-          // Notify others
-          socket.to(currentRoomId).emit('peerLeft', { peerId, userId: currentUserId });
-          
-          // If room is empty, clean it up
-          if (room.peers.size === 0) {
-            room.router.close();
-            rooms.delete(currentRoomId);
-            console.log(`Room ${currentRoomId} closed (empty)`);
-          }
-        }
-        
-        await publishVoiceState(null, currentUserId, {});
-      }
-    }
+    await cleanupPeer();
   });
 });
 

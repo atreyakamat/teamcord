@@ -3,10 +3,10 @@ import os
 import json
 import nats
 from fastapi import FastAPI
-from agent.core import NexusAgent
+from agent.core import TeamCordAgent
 
 app = FastAPI()
-agent = NexusAgent()
+agent = TeamCordAgent()
 
 # Track message counts per channel for proactivity
 channel_activity = {}
@@ -43,7 +43,7 @@ async def nats_subscriber():
 
                 triggered = False
                 
-                if content.startswith("/summarise") or content.startswith("/decide") or "@nexus" in content.lower():
+                if content.startswith("/summarise") or content.startswith("/decide") or "@teamcord" in content.lower():
                     print(f"Agent explicitly triggered by: {content}")
                     response = await agent.invoke(content, data)
                     triggered = True

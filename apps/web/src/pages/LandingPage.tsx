@@ -34,7 +34,7 @@ const featureCards = [
   {
     eyebrow: 'Messaging',
     title: 'Channels, threads, reactions, and decision flows built for async teams.',
-    body: 'Nexus keeps the familiar speed of chat while giving teams a cleaner structure for long-running work.',
+    body: 'TeamCord keeps the familiar speed of chat while giving teams a cleaner structure for long-running work.',
     icon: MessageSquareText,
   },
   {
@@ -81,9 +81,9 @@ export default function LandingPage() {
         <header className="glass-panel sticky top-4 z-20 mb-12 flex items-center justify-between gap-4 rounded-full px-5 py-3">
           <Link to="/" className="flex items-center gap-3 text-sm font-semibold tracking-[0.2em] text-[#113339] uppercase">
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#113339] text-sm font-bold text-[#f6efe5]">
-              N
+              TC
             </span>
-            Nexus
+            TeamCord
           </Link>
 
           <nav className="hidden items-center gap-6 text-sm text-[#28444a] md:flex">
@@ -121,7 +121,7 @@ export default function LandingPage() {
               </h1>
 
               <p className="mt-6 max-w-2xl text-lg leading-8 text-[#304b50] sm:text-xl">
-                Nexus is an AI-native, self-hostable communication platform designed for professional teams.
+                TeamCord is an AI-native, self-hostable communication platform designed for professional teams.
                 It combines fast chat, structured threads, voice/video collaboration, and searchable team memory in one stack.
               </p>
 
@@ -158,7 +158,7 @@ export default function LandingPage() {
               <div className="mb-8 flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#57767b]">Launch Blueprint</p>
-                  <h2 className="font-display mt-2 text-3xl text-[#112d33]">What makes Nexus different</h2>
+                  <h2 className="font-display mt-2 text-3xl text-[#112d33]">What makes TeamCord different</h2>
                 </div>
                 <Sparkles size={22} className="text-[#ff7a18]" />
               </div>
@@ -180,7 +180,7 @@ export default function LandingPage() {
               <div className="mt-6 rounded-3xl bg-[#10292f] p-5 text-[#f6efe5]">
                 <p className="text-xs uppercase tracking-[0.28em] text-[#c7d9d4]">Product Positioning</p>
                 <p className="mt-3 text-lg leading-8 text-[#f2e8db]">
-                  Discord is built for chatter. Nexus is built for teams that need decisions, context, and ownership to survive after the scroll is gone.
+                  Discord is built for chatter. TeamCord is built for teams that need decisions, context, and ownership to survive after the scroll is gone.
                 </p>
               </div>
             </aside>
@@ -215,7 +215,7 @@ export default function LandingPage() {
                 <p className="text-sm uppercase tracking-[0.24em] text-[#7a6660]">Async Work</p>
                 <h3 className="font-display mt-3 text-2xl text-[#132126]">Built for how teams really work</h3>
                 <p className="mt-3 text-sm leading-7 text-[#466268]">
-                  Channels alone are not enough. Nexus leans into projects, threads, and workflows that survive time zones.
+                  Channels alone are not enough. TeamCord leans into projects, threads, and workflows that survive time zones.
                 </p>
               </div>
             </div>
@@ -251,7 +251,7 @@ export default function LandingPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#4b2b13]">Roadmap</p>
               <h2 className="font-display mt-3 text-4xl leading-tight">Ship the collaboration core first, then grow into the agency moat.</h2>
               <p className="mt-4 text-base leading-8 text-[#4d2d14]">
-                The PRD roadmap is one of Nexus’s strengths: focus the launch on communication fundamentals,
+                The PRD roadmap is one of TeamCord's strengths: focus the launch on communication fundamentals,
                 then layer in knowledge management, portals, and premium workflows.
               </p>
             </div>
@@ -274,7 +274,7 @@ export default function LandingPage() {
             <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#aac8c2]">Ready To Explore</p>
-                <h2 className="font-display mt-3 text-4xl leading-tight">Nexus now has a launch page that matches the story the PRD is trying to tell.</h2>
+                <h2 className="font-display mt-3 text-4xl leading-tight">TeamCord now has a launch page that matches the story the PRD is trying to tell.</h2>
                 <p className="mt-4 text-base leading-8 text-[#d7e4df]">
                   Use the landing page as the public front door, and keep the product shell available at a dedicated app route while the remaining launch blockers are closed.
                 </p>

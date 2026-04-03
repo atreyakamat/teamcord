@@ -1,6 +1,6 @@
 @echo off
 echo ╔══════════════════════════════════════════════════════════════╗
-echo ║           Nexus - Development Environment Setup           ║
+echo ║           TeamCord - Development Environment Setup           ║
 echo ╠══════════════════════════════════════════════════════════════╣
 echo ║  Discord alternative for teams - Self-hosted, Open-source    ║
 echo ╚══════════════════════════════════════════════════════════════╝
@@ -42,8 +42,8 @@ echo       Dependencies installed
 echo.
 
 echo [4/6] Building shared packages...
-call pnpm --filter @nexus/types build
-call pnpm --filter @nexus/db build
+call pnpm --filter @teamcord/types build
+call pnpm --filter @teamcord/db build
 echo       Packages built
 echo.
 

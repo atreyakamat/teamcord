@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/nexus/messaging/internal/db"
+	"github.com/teamcord/messaging/internal/db"
 )
 
 type Message struct {

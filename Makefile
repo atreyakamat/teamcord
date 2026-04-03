@@ -1,4 +1,4 @@
-# Nexus Development Makefile
+# TeamCord Development Makefile
 
 .PHONY: setup dev stop clean ps logs migrate shell-db
 
@@ -40,4 +40,4 @@ migrate:
 
 # Open PostgreSQL shell
 shell-db:
-	docker exec -it nexus-postgres psql -U nexus -d nexus
+	docker exec -it teamcord-postgres psql -U teamcord -d teamcord

@@ -1,8 +1,8 @@
-import { useEffect, useRef, useCallback } from 'react'
-import { useMessageStore } from '../../stores/messages'
+import { useCallback, useEffect, useRef } from 'react'
 import { useChannelStore } from '../../stores/channels'
-import { useGatewayStore } from '../../stores/gateway'
 import Message from './Message'
+import { useGatewayStore } from '../../stores/gateway'
+import { useMessageStore } from '../../stores/messages'
 
 const MessageList = () => {
   const selectedChannelId = useChannelStore((state) => state.selectedChannelId)
@@ -12,27 +12,32 @@ const MessageList = () => {
   const fetchMessages = useMessageStore((state) => state.fetchMessages)
   const connect = useGatewayStore((state) => state.connect)
   const subscribeChannel = useGatewayStore((state) => state.subscribeChannel)
-  
-  const listRef = useRef<HTMLDivElement>(null)
-  const loadMoreRef = useRef<HTMLDivElement>(null)
+  const unsubscribeChannel = useGatewayStore((state) => state.unsubscribeChannel)
 
-  // Connect to gateway on mount
+  const listRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     connect()
   }, [connect])
 
-  // Fetch messages and subscribe when channel changes
   useEffect(() => {
-    if (selectedChannelId) {
-      fetchMessages(selectedChannelId)
-      subscribeChannel(selectedChannelId)
+    if (!selectedChannelId) {
+      return
     }
-  }, [selectedChannelId, fetchMessages, subscribeChannel])
 
-  // Infinite scroll - load more when scrolling to top
+    fetchMessages(selectedChannelId)
+    subscribeChannel(selectedChannelId)
+
+    return () => {
+      unsubscribeChannel(selectedChannelId)
+    }
+  }, [selectedChannelId, fetchMessages, subscribeChannel, unsubscribeChannel])
+
   const handleScroll = useCallback(() => {
-    if (!listRef.current || !selectedChannelId) return
-    
+    if (!listRef.current || !selectedChannelId) {
+      return
+    }
+
     const { scrollTop } = listRef.current
     if (scrollTop < 100 && hasMore[selectedChannelId] && !loading[selectedChannelId]) {
       const messages = messagesByChannel[selectedChannelId] || []
@@ -40,70 +45,65 @@ const MessageList = () => {
         fetchMessages(selectedChannelId, messages[0].id)
       }
     }
-  }, [selectedChannelId, hasMore, loading, messagesByChannel, fetchMessages])
+  }, [fetchMessages, hasMore, loading, messagesByChannel, selectedChannelId])
 
-  // Auto-scroll to bottom on new messages
   useEffect(() => {
-    if (listRef.current) {
-      const { scrollHeight, scrollTop, clientHeight } = listRef.current
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100
-      
-      if (isNearBottom) {
-        listRef.current.scrollTop = listRef.current.scrollHeight
-      }
+    if (!listRef.current) {
+      return
+    }
+
+    const { scrollHeight, scrollTop, clientHeight } = listRef.current
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100
+
+    if (isNearBottom) {
+      listRef.current.scrollTop = listRef.current.scrollHeight
     }
   }, [messagesByChannel, selectedChannelId])
 
-  const messages = selectedChannelId ? (messagesByChannel[selectedChannelId] || []) : []
+  const messages = selectedChannelId ? messagesByChannel[selectedChannelId] || [] : []
   const isLoading = selectedChannelId ? loading[selectedChannelId] : false
 
-  // Group messages by author and time (messages within 7 minutes of each other)
   const groupedMessages = messages.reduce((groups, message, index) => {
-    const prevMessage = messages[index - 1]
-    const isGrouped = prevMessage && 
-      prevMessage.authorId === message.authorId &&
-      new Date(message.createdAt).getTime() - new Date(prevMessage.createdAt).getTime() < 7 * 60 * 1000
+    const previousMessage = messages[index - 1]
+    const isGrouped =
+      Boolean(previousMessage) &&
+      previousMessage.authorId === message.authorId &&
+      new Date(message.createdAt).getTime() - new Date(previousMessage.createdAt).getTime() <
+        7 * 60 * 1000
 
     groups.push({ message, isGrouped })
     return groups
-  }, [] as { message: typeof messages[0]; isGrouped: boolean }[])
+  }, [] as { message: (typeof messages)[number]; isGrouped: boolean }[])
 
   return (
-    <div 
-      ref={listRef}
-      className="flex flex-col overflow-y-auto px-0 pb-4"
-      onScroll={handleScroll}
-    >
-      {/* Load more indicator */}
+    <div ref={listRef} className="flex flex-col overflow-y-auto px-0 pb-4" onScroll={handleScroll}>
       {isLoading && (
         <div className="flex justify-center py-4">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-dc-blurple border-t-transparent" />
         </div>
       )}
 
-      {/* Empty state */}
       {messages.length === 0 && !isLoading && (
         <div className="flex flex-col items-center justify-center pt-20 text-center">
-          <div className="text-6xl mb-4">👋</div>
-          <h3 className="text-2xl font-bold text-white mb-2">Welcome to the channel!</h3>
-          <p className="text-dc-muted">This is the beginning of the conversation. Be the first to say hello!</p>
+          <div className="mb-4 text-6xl">...</div>
+          <h3 className="mb-2 text-2xl font-bold text-white">Welcome to the channel</h3>
+          <p className="text-dc-muted">
+            This is the beginning of the conversation. Be the first to say hello.
+          </p>
         </div>
       )}
 
-      {/* Messages */}
       {groupedMessages.map(({ message, isGrouped }) => (
         <Message
           key={message.id}
           message={message}
           isGrouped={isGrouped}
-          onReply={(msg) => {
-            // Could implement reply functionality
-            console.log('Reply to:', msg)
+          onReply={(replyMessage) => {
+            console.log('Reply to:', replyMessage)
           }}
         />
       ))}
 
-      {/* Bottom padding for scroll */}
       <div className="h-6" />
     </div>
   )

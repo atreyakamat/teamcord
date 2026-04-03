@@ -1,5 +1,5 @@
 +-----------------------------------------------------------------------+
-| **Nexus**                                                             |
+| **TeamCord**                                                             |
 |                                                                       |
 | The Discord We Deserved                                               |
 |                                                                       |
@@ -18,7 +18,7 @@
   -----------------------------------------------------------------------
 
 This document describes the complete technical stack and design
-principles behind Nexus --- a from-scratch reimplementation of the
+principles behind TeamCord --- a from-scratch reimplementation of the
 Discord experience, built for professional teams, agencies, and
 privacy-conscious organisations.
 
@@ -70,12 +70,12 @@ with presence indicators (green = online, yellow = idle, red = DND, grey
 ▸ **TYPOGRAPHY**
 
 Discord uses \'gg sans\' (their proprietary font, released 2022) and
-\'Whitney\' (their legacy font). For Nexus we use Inter as the closest
+\'Whitney\' (their legacy font). For TeamCord we use Inter as the closest
 open-source equivalent --- same proportions, similar optical weight.
 Monospace text (code blocks, IDs) uses JetBrains Mono.
 
 +-----------------------------------------------------------------------+
-| // Font stack --- Nexus design system                                 |
+| // Font stack --- TeamCord design system                                 |
 |                                                                       |
 | font-family: \'Inter\', \'gg sans\', \'Noto Sans\', sans-serif;       |
 |                                                                       |
@@ -133,7 +133,7 @@ Monospace text (code blocks, IDs) uses JetBrains Mono.
 ▸ **COMPONENT SPECS --- EXACT MEASUREMENTS**
 
 +-----------------------------------------------------------------------+
-| // Discord component measurements --- Nexus matches these exactly     |
+| // Discord component measurements --- TeamCord matches these exactly     |
 |                                                                       |
 | // Server list rail                                                   |
 |                                                                       |
@@ -394,7 +394,7 @@ equivalent.
 
   **Community      Ollama (local)      Llama 3.1 8B / Mistral 7B / Phi-3
   LLM**                                Mini. Runs on the same server as
-                                       Nexus. No external API calls. Full
+                                       TeamCord. No external API calls. Full
                                        privacy.
 
   **Cloud LLM**    Claude (Anthropic   claude-sonnet-4-5 on Plus/Pro. API
@@ -488,7 +488,7 @@ sourced from thousands of user complaints and technical analyses.
 +----+-----------------------------------------------------------------+
 | ** | **You own your data, completely**                               |
 | 02 |                                                                 |
-| ** | Self-hosted Nexus makes zero external network calls. No         |
+| ** | Self-hosted TeamCord makes zero external network calls. No         |
 |    | telemetry, no analytics beacons, no CDN assets from our         |
 |    | servers. The admin dashboard shows every byte of outbound       |
 |    | traffic. On cloud tiers, data is encrypted at rest with keys    |
@@ -548,7 +548,7 @@ sourced from thousands of user complaints and technical analyses.
 +----+-----------------------------------------------------------------+
 | ** | **One command to run everything**                               |
 | 06 |                                                                 |
-| ** | The entire Nexus stack --- all services, all databases, all     |
+| ** | The entire TeamCord stack --- all services, all databases, all     |
 |    | monitoring --- must start with a single command on a fresh      |
 |    | Ubuntu VPS. The install script handles secrets, TLS, DNS        |
 |    | validation, and first-user setup. Time to a working workspace:  |
@@ -636,10 +636,10 @@ deviation is noted.
 Discord\'s gateway is a WebSocket connection with a JSON (or ETF)
 message format using opcode-based dispatch. We replicate the opcode
 structure exactly so that community-built Discord clients can connect to
-a Nexus server with minimal modification.
+a TeamCord server with minimal modification.
 
 +-----------------------------------------------------------------------+
-| // Discord gateway opcodes --- Nexus implements all of these          |
+| // Discord gateway opcodes --- TeamCord implements all of these          |
 |                                                                       |
 | OP 0: DISPATCH → server sends events (MESSAGE_CREATE, etc.)           |
 |                                                                       |
@@ -655,7 +655,7 @@ a Nexus server with minimal modification.
 |                                                                       |
 | OP 11: HEARTBEAT_ACK → server acks heartbeat                          |
 |                                                                       |
-| // Extension opcodes for Nexus-only features                          |
+| // Extension opcodes for TeamCord-only features                          |
 |                                                                       |
 | OP 100: AI_AGENT_TYPING → agent is generating a response              |
 |                                                                       |
@@ -723,7 +723,7 @@ catchup call.
 |                                                                       |
 | Server emits: WS event MESSAGE_CREATE to all channel subscribers      |
 |                                                                       |
-| // Nexus additions on top                                             |
+| // TeamCord additions on top                                             |
 |                                                                       |
 | NATS publish: channel.{id} subject with Message object                |
 |                                                                       |
@@ -744,7 +744,7 @@ are sortable by time and can be used for pagination without a database
 query.
 
 +-----------------------------------------------------------------------+
-| // Discord snowflake format --- Nexus matches exactly                 |
+| // Discord snowflake format --- TeamCord matches exactly                 |
 |                                                                       |
 | Bit layout (64 bits total):                                           |
 |                                                                       |
@@ -757,7 +757,7 @@ query.
 |                                                                       |
 | \[11..0\] 12 bits sequence (resets per millisecond)                   |
 |                                                                       |
-| // Nexus epoch (our founding date, not Discord\'s)                    |
+| // TeamCord epoch (our founding date, not Discord\'s)                    |
 |                                                                       |
 | const NEXUS_EPOCH = 1704067200000n; // 2024-01-01T00:00:00.000Z       |
 |                                                                       |
@@ -793,7 +793,7 @@ query.
 +-----------------------------------------------------------------------+
 | \# Download and run the install script                                |
 |                                                                       |
-| curl -fsSL https://get.nexus.sh \| bash                               |
+| curl -fsSL https://get.teamcord.sh \| bash                               |
 |                                                                       |
 | \# The script will:                                                   |
 |                                                                       |
@@ -803,7 +803,7 @@ query.
 |                                                                       |
 | \# 3. Generate all secrets (.env file)                                |
 |                                                                       |
-| \# 4. Pull all service images from ghcr.io/nexus-platform             |
+| \# 4. Pull all service images from ghcr.io/teamcord-platform             |
 |                                                                       |
 | \# 5. Start the full stack                                            |
 |                                                                       |
@@ -815,9 +815,9 @@ query.
 |                                                                       |
 | \# Manual install (if you prefer to inspect first)                    |
 |                                                                       |
-| git clone https://github.com/nexus-platform/nexus                     |
+| git clone https://github.com/teamcord-platform/teamcord                     |
 |                                                                       |
-| cd nexus                                                              |
+| cd teamcord                                                              |
 |                                                                       |
 | cp .env.example .env \# edit domain, SMTP, etc.                       |
 |                                                                       |
@@ -831,7 +831,7 @@ query.
 |                                                                       |
 | curl -fsSL https://ollama.ai/install.sh \| bash                       |
 |                                                                       |
-| \# Pull the recommended model for Nexus agent                         |
+| \# Pull the recommended model for TeamCord agent                         |
 |                                                                       |
 | ollama pull llama3.1:8b \# best overall (requires 6 GB RAM)           |
 |                                                                       |
@@ -839,7 +839,7 @@ query.
 |                                                                       |
 | \# ollama pull phi3:mini \# very fast, works on 4 GB RAM              |
 |                                                                       |
-| \# Configure Nexus to use local Ollama                                |
+| \# Configure TeamCord to use local Ollama                                |
 |                                                                       |
 | \# In your .env file:                                                 |
 |                                                                       |
@@ -877,7 +877,7 @@ query.
   -------------------------------------------------------------------------------------
   **Layer**                 **Technology**           **Why we chose it**
   ------------------------- ------------------------ ----------------------------------
-  **DOMAIN**                nexus.example.com        Your domain. Caddy auto-issues TLS
+  **DOMAIN**                teamcord.example.com        Your domain. Caddy auto-issues TLS
                                                      cert. Required.
 
   **POSTGRES_PASSWORD**     (generated)              Postgres root password.
@@ -888,7 +888,7 @@ query.
   **JWT_SECRET**            (generated)              64-char secret for signing session
                                                      tokens.
 
-  **MINIO_ROOT_USER**       nexus                    MinIO admin username.
+  **MINIO_ROOT_USER**       teamcord                    MinIO admin username.
 
   **MINIO_ROOT_PASSWORD**   (generated)              MinIO admin password.
 
@@ -922,22 +922,22 @@ query.
 
   -----------------------------------------------------------------------
 
--   GitHub: github.com/nexus-platform/nexus
+-   GitHub: github.com/teamcord-platform/teamcord
 
--   Docs: docs.nexus.sh
+-   Docs: docs.teamcord.sh
 
--   Self-host guide: docs.nexus.sh/self-hosting
+-   Self-host guide: docs.teamcord.sh/self-hosting
 
--   API reference: docs.nexus.sh/api
+-   API reference: docs.teamcord.sh/api
 
--   Community forum: community.nexus.sh
+-   Community forum: community.teamcord.sh
 
--   Discord (the irony): discord.gg/nexus-beta
+-   Discord (the irony): discord.gg/teamcord-beta
 
--   Status page: status.nexus.sh
+-   Status page: status.teamcord.sh
 
 +-----------------------------------------------------------------------+
-| **Nexus is Discord done right.**                                      |
+| **TeamCord is Discord done right.**                                      |
 |                                                                       |
 | *Same UI. Better internals. Your data. Your server.*                  |
 +-----------------------------------------------------------------------+

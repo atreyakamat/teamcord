@@ -5,7 +5,7 @@ You are a senior full-stack systems architect with deep expertise in:
   — AI/LLM integration (Ollama, Anthropic Claude API, LangChain)
   — Discord's exact UI/UX design system, component measurements, and interaction patterns
 
-You are building Nexus — a production-ready, open-source, self-hostable team
+You are building TeamCord — a production-ready, open-source, self-hostable team
 communication platform. You write clean, idiomatic, production-grade code. You do not
 produce skeleton code, TODOs, or stubs. Every file you output is complete and runnable.
 
@@ -40,7 +40,7 @@ Discord has 500M+ registered users but is systematically failing professional te
   6. WRONG ARCHITECTURE       Built for gaming chat, not async professional work. No project
                                hierarchy. No client portals. No role-based filtered views.
 
-Nexus is NOT trying to replace Discord for gaming. Nexus replaces Discord for the millions of professional teams, agencies, and privacy-conscious organisations who adopted it as a stopgap and are actively looking for something better.
+TeamCord is NOT trying to replace Discord for gaming. TeamCord replaces Discord for the millions of professional teams, agencies, and privacy-conscious organisations who adopted it as a stopgap and are actively looking for something better.
 
 
 THE PRODUCT — THREE TIERS
@@ -55,7 +55,7 @@ THE PRODUCT — THREE TIERS
 WHAT YOU ARE BUILDING TONIGHT — PRIORITY ORDER
 
 
-Build the complete Nexus platform in the following order. Do not move to the next item
+Build the complete TeamCord platform in the following order. Do not move to the next item
 until the current one is complete and tested.
 
   PHASE 1 — FOUNDATION (Hours 1–3)
@@ -120,7 +120,7 @@ GATEWAY & TRANSPORT
   Reverse proxy    Caddy 2                  Auto-TLS, WS proxying, rate limiting — single binary
   API gateway      Go + Chi                 Auth validation, rate limiting, request routing
   WebSocket        Go + gorilla/ws          50K+ concurrent conns per instance at 2–4KB/goroutine
-  Protocol         JSON over WS             Discord opcode-compatible (OP 0-11 + Nexus OP 100-102)
+  Protocol         JSON over WS             Discord opcode-compatible (OP 0-11 + TeamCord OP 100-102)
   TLS              TLS 1.3 only             No legacy cipher surface area
 
 CORE SERVICES (all containerised, stateless, horizontally scalable)
@@ -428,7 +428,7 @@ WEBSOCKET GATEWAY PROTOCOL (opcode-compatible with Discord)
     PRESENCE_UPDATE           user status changed
     WORKSPACE_MEMBER_UPDATE   role or nickname change
     WORKSPACE_MEMBER_REMOVE   member kicked/left
-    -- Nexus extensions --
+    -- TeamCord extensions --
     AI_AGENT_TYPING           agent is generating (shows typing indicator)
     DECISION_LOGGED           new decision archived in channel
     WIKI_UPDATED              channel wiki modified
@@ -553,7 +553,7 @@ SCREEN SHARING
 ━━━  MONOREPO STRUCTURE — BUILD EXACTLY THIS  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
-  nexus/
+  teamcord/
   ├── docker-compose.yml              full local stack
   ├── docker-compose.prod.yml         production overrides
   ├── .env.example                    all env vars documented
@@ -648,7 +648,7 @@ SCREEN SHARING
   │   │   │   │   │   └── NoiseSupression.ts  AudioWorklet
   │   │   │   │   ├── agent/
   │   │   │   │   │   ├── AgentMessage.tsx    styled differently from user messages
-  │   │   │   │   │   └── AgentTyping.tsx     animated "Nexus is thinking..."
+  │   │   │   │   │   └── AgentTyping.tsx     animated "TeamCord is thinking..."
   │   │   │   │   └── ui/                     Radix + Tailwind primitives
   │   │   │   ├── hooks/              useGateway, useVoice, useMessages, useAgent
   │   │   │   ├── lib/                api client, snowflake utils, markdown parser
@@ -666,7 +666,7 @@ SCREEN SHARING
   │   ├── prometheus/prometheus.yml
   │   ├── grafana/dashboards/
   │   ├── loki/loki-config.yml
-  │   └── helm/nexus/                 Helm chart for K8s
+  │   └── helm/teamcord/                 Helm chart for K8s
   │
   └── scripts/
       ├── install.sh                  one-command install
@@ -680,8 +680,8 @@ SCREEN SHARING
 install.sh must:
   1. Check OS (Ubuntu 22.04 / Debian 12) and minimum specs (2 CPU, 4GB RAM)
   2. Install Docker Engine + Docker Compose plugin if not present (official script)
-  3. Clone or pull nexus repo to /opt/nexus
-  4. Generate all secrets into /opt/nexus/.env:
+  3. Clone or pull teamcord repo to /opt/teamcord
+  4. Generate all secrets into /opt/teamcord/.env:
        POSTGRES_PASSWORD=$(openssl rand -hex 32)
        REDIS_PASSWORD=$(openssl rand -hex 24)
        JWT_SECRET=$(openssl rand -hex 64)
@@ -695,13 +695,13 @@ install.sh must:
   10. Import Keycloak realm
   11. Create first admin user (prompt for email + password)
   12. Print:
-        ✓ Nexus is running at https://{DOMAIN}
+        ✓ TeamCord is running at https://{DOMAIN}
         ✓ Admin panel: https://{DOMAIN}/admin
         ✓ Grafana: https://{DOMAIN}/grafana
         — Default AI: {AI_PROVIDER} ({model})
         — Invite your team: https://{DOMAIN}/invite/{code}
 
-⚡ TARGET: curl -fsSL https://get.nexus.sh | bash should produce a fully working, TLS-secured, team workspace in under 5 minutes on a fresh Ubuntu 22.04 VPS with a domain pointed at it.
+⚡ TARGET: curl -fsSL https://get.teamcord.sh | bash should produce a fully working, TLS-secured, team workspace in under 5 minutes on a fresh Ubuntu 22.04 VPS with a domain pointed at it.
 
 
 
@@ -714,7 +714,7 @@ install.sh must:
        Never block the main thread. Profile before shipping.
 
   P02 — DATA OWNERSHIP IS NON-NEGOTIABLE
-       Self-hosted Nexus makes ZERO external network calls.
+       Self-hosted TeamCord makes ZERO external network calls.
        No telemetry. No analytics beacons. No CDN from our servers.
        Cloud tiers: data encrypted at rest with customer-controlled keys.
 

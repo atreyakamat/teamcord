@@ -1,4 +1,4 @@
--- ─── Nexus Initial Schema ───────────────────────────────────────────────────
+-- ─── TeamCord Initial Schema ───────────────────────────────────────────────────
 
 -- Enable Extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

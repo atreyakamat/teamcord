@@ -2,11 +2,12 @@ package ws
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"sync"
 
 	"github.com/nats-io/nats.go"
-	"github.com/nexus/gateway/internal/protocol"
+	"github.com/teamcord/gateway/internal/protocol"
 )
 
 type Hub struct {
@@ -88,7 +89,7 @@ func (h *Hub) Run() {
 			var channelID string
 
 			if payloadMap, ok := payload.D.(map[string]interface{}); ok {
-				if cID, hasCID := payloadMap["channel_id"].(string); hasCID {
+				if cID, hasCID := channelIDFromPayload(payloadMap); hasCID {
 					isChannelEvent = true
 					channelID = cID
 				}
@@ -119,6 +120,28 @@ func (h *Hub) Run() {
 			}
 			h.mu.RUnlock()
 		}
+	}
+}
+
+func channelIDFromPayload(payload map[string]interface{}) (string, bool) {
+	if payload == nil {
+		return "", false
+	}
+
+	switch value := payload["channel_id"].(type) {
+	case string:
+		if value == "" {
+			return "", false
+		}
+		return value, true
+	case float64:
+		return fmt.Sprintf("%.0f", value), true
+	case int:
+		return fmt.Sprintf("%d", value), true
+	case int64:
+		return fmt.Sprintf("%d", value), true
+	default:
+		return "", false
 	}
 }
 

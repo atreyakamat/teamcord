@@ -1,4 +1,4 @@
-module github.com/nexus/gateway
+module github.com/teamcord/gateway
 
 go 1.22
 

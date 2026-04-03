@@ -33,7 +33,7 @@ def load_plugins():
                     
     return plugin_tools
 
-class NexusAgent:
+class TeamCordAgent:
     def __init__(self):
         self.provider = os.getenv("AI_PROVIDER", "ollama")
         self.tools = [summarise_thread, log_decision, web_search, execute_code, draft_message, create_diagram]
@@ -42,7 +42,7 @@ class NexusAgent:
         print(f"Agent loaded with tools: {[t.name for t in self.tools]}")
         
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are Nexus, the built-in AI assistant for a professional team communication platform.\n"
+            ("system", "You are TeamCord, the built-in AI assistant for a professional team communication platform.\n"
                        "Use the provided tools to assist users. Always format your responses in Markdown.\n"
                        "Do not output internal thoughts, just answer the user directly and use tools when needed."),
             ("user", "{input}"),

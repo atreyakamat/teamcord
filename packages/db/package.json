@@ -1,8 +1,8 @@
 {
-  "name": "@nexus/db",
+  "name": "@teamcord/db",
   "version": "0.1.0",
   "private": true,
-  "description": "Database client and schema for Nexus (PostgreSQL + Drizzle ORM)",
+  "description": "Database client and schema for TeamCord (PostgreSQL + Drizzle ORM)",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

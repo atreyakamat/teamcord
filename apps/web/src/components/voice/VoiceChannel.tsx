@@ -1,78 +1,86 @@
-import { useEffect, useRef } from 'react';
-import { useVoice, Peer } from '../../hooks/useVoice';
-import { Mic, MicOff, Video, VideoOff, PhoneOff, MonitorUp } from 'lucide-react';
+import { useEffect, useRef } from 'react'
+import { Mic, MicOff, MonitorUp, PhoneOff, Video, VideoOff } from 'lucide-react'
+import { useAuthStore } from '../../stores/auth'
+import { useVoice } from '../../hooks/useVoice'
 
 interface VoiceChannelProps {
-  channelId: string;
-  onLeave: () => void;
+  channelId: string
+  onLeave: () => void
 }
 
 export const VoiceChannel = ({ channelId, onLeave }: VoiceChannelProps) => {
+  const user = useAuthStore((state) => state.user)
   const {
     isConnected,
     peers,
     localStream,
     isMuted,
     isVideoOn,
+    isScreenSharing,
     joinRoom,
     leaveRoom,
     toggleMute,
-    toggleVideo
-  } = useVoice();
+    toggleVideo,
+    toggleScreenShare,
+  } = useVoice()
 
   useEffect(() => {
-    // We assume the user has some ID and Name in a real app
-    const userId = `user-${Math.random().toString(36).substring(7)}`;
-    joinRoom(channelId, userId);
+    const userId = user?.id || `guest-${Math.random().toString(36).slice(2, 8)}`
+    joinRoom(channelId, userId)
 
     return () => {
-      leaveRoom();
-    };
-  }, [channelId, joinRoom, leaveRoom]);
+      leaveRoom()
+    }
+  }, [channelId, joinRoom, leaveRoom, user?.id])
 
   const handleDisconnect = () => {
-    leaveRoom();
-    onLeave();
-  };
+    leaveRoom()
+    onLeave()
+  }
 
   return (
     <div className="flex h-full w-full flex-col bg-dc-primary p-4">
-      {/* Header */}
       <div className="flex items-center justify-between border-b border-dc-tertiary pb-4">
-        <h2 className="text-xl font-bold text-white">Voice Channel</h2>
+        <div>
+          <h2 className="text-xl font-bold text-white">Voice Channel</h2>
+          <p className="mt-1 text-sm text-dc-muted">
+            Camera, audio, and screen sharing now run inside the same TeamCord room.
+          </p>
+        </div>
         <div className="flex items-center space-x-2 text-dc-muted">
-          <span className={`h-2 w-2 rounded-full ${isConnected ? 'bg-dc-green' : 'bg-red-500'}`}></span>
+          <span className={`h-2 w-2 rounded-full ${isConnected ? 'bg-dc-green' : 'bg-red-500'}`} />
           <span className="text-sm font-medium">{isConnected ? 'Connected' : 'Connecting...'}</span>
         </div>
       </div>
 
-      {/* Video Grid */}
       <div className="flex-grow overflow-y-auto py-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Local User */}
           {localStream && (
             <div className="relative aspect-video overflow-hidden rounded-lg bg-black shadow-lg">
-              <VideoBox stream={localStream} muted={true} isLocal />
+              <VideoBox stream={localStream} muted isLocal />
               <div className="absolute bottom-2 left-2 flex items-center space-x-2 rounded bg-black/60 px-2 py-1 text-sm text-white">
-                <span>You</span>
+                <span>{user?.displayName || 'You'}</span>
                 {isMuted && <MicOff size={14} className="text-red-400" />}
+                {isScreenSharing && (
+                  <span className="rounded bg-[rgba(255,122,24,0.9)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#10292f]">
+                    Screen
+                  </span>
+                )}
               </div>
             </div>
           )}
 
-          {/* Remote Peers */}
           {peers.map((peer) => (
             <div key={peer.id} className="relative aspect-video overflow-hidden rounded-lg bg-black shadow-lg">
               <VideoBox stream={peer.stream} />
               <div className="absolute bottom-2 left-2 flex items-center space-x-2 rounded bg-black/60 px-2 py-1 text-sm text-white">
                 <span>{peer.userId}</span>
                 {peer.selfMute && <MicOff size={14} className="text-red-400" />}
-                {peer.selfDeaf && <PhoneOff size={14} className="text-red-400" />}
               </div>
             </div>
           ))}
         </div>
-        
+
         {peers.length === 0 && isConnected && (
           <div className="flex h-full items-center justify-center text-dc-muted">
             <p>You are the only one here. Waiting for others to join...</p>
@@ -80,30 +88,30 @@ export const VoiceChannel = ({ channelId, onLeave }: VoiceChannelProps) => {
         )}
       </div>
 
-      {/* Control Bar */}
       <div className="mt-4 flex items-center justify-center space-x-4 rounded-lg bg-dc-secondary p-4 shadow-md">
-        <ControlButton 
-          icon={isMuted ? <MicOff size={24} /> : <Mic size={24} />} 
-          active={!isMuted} 
+        <ControlButton
+          icon={isMuted ? <MicOff size={24} /> : <Mic size={24} />}
+          active={!isMuted}
           danger={isMuted}
-          onClick={toggleMute} 
-          tooltip={isMuted ? 'Unmute' : 'Mute'} 
+          onClick={toggleMute}
+          tooltip={isMuted ? 'Unmute' : 'Mute'}
         />
-        <ControlButton 
-          icon={isVideoOn ? <Video size={24} /> : <VideoOff size={24} />} 
-          active={isVideoOn} 
+        <ControlButton
+          icon={isVideoOn ? <Video size={24} /> : <VideoOff size={24} />}
+          active={isVideoOn}
           danger={!isVideoOn}
-          onClick={toggleVideo} 
-          tooltip={isVideoOn ? 'Turn Off Camera' : 'Turn On Camera'} 
+          onClick={toggleVideo}
+          tooltip={isVideoOn ? 'Turn off camera' : 'Turn on camera'}
         />
-        <ControlButton 
-          icon={<MonitorUp size={24} />} 
-          active={false} 
-          onClick={() => alert('Screen share not implemented yet')} 
-          tooltip="Share Screen" 
+        <ControlButton
+          icon={<MonitorUp size={24} />}
+          active={isScreenSharing}
+          onClick={toggleScreenShare}
+          tooltip={isScreenSharing ? 'Stop sharing' : 'Share screen'}
         />
-        <div className="h-8 w-px bg-dc-tertiary mx-2"></div>
-        <button 
+        <div className="mx-2 h-8 w-px bg-dc-tertiary" />
+        <button
+          type="button"
           onClick={handleDisconnect}
           className="flex h-12 w-16 items-center justify-center rounded-lg bg-red-500 text-white transition hover:bg-red-600"
           title="Disconnect"
@@ -112,64 +120,71 @@ export const VoiceChannel = ({ channelId, onLeave }: VoiceChannelProps) => {
         </button>
       </div>
     </div>
-  );
-};
+  )
+}
 
-// Helper component to render MediaStream
-const VideoBox = ({ stream, muted = false, isLocal = false }: { stream: MediaStream, muted?: boolean, isLocal?: boolean }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
+const VideoBox = ({
+  stream,
+  muted = false,
+  isLocal = false,
+}: {
+  stream: MediaStream
+  muted?: boolean
+  isLocal?: boolean
+}) => {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const audioRef = useRef<HTMLAudioElement>(null)
 
   useEffect(() => {
-    const hasVideo = stream.getVideoTracks().length > 0;
-    
-    if (hasVideo && videoRef.current) {
-      videoRef.current.srcObject = stream;
-    } else if (!hasVideo && audioRef.current && !muted) {
-      audioRef.current.srcObject = stream;
-    }
-  }, [stream, muted]);
+    const hasVideo = stream.getVideoTracks().length > 0
 
-  const hasVideo = stream.getVideoTracks().length > 0;
+    if (hasVideo && videoRef.current) {
+      videoRef.current.srcObject = stream
+    } else if (!hasVideo && audioRef.current && !muted) {
+      audioRef.current.srcObject = stream
+    }
+  }, [stream, muted])
+
+  const hasVideo = stream.getVideoTracks().length > 0
 
   return (
     <>
       {hasVideo ? (
-        <video 
-          ref={videoRef} 
-          autoPlay 
-          playsInline 
-          muted={muted} 
-          className={`h-full w-full object-cover ${isLocal ? 'scale-x-[-1]' : ''}`} 
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted={muted}
+          className={`h-full w-full object-cover ${isLocal ? 'scale-x-[-1]' : ''}`}
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-dc-tertiary">
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-dc-green text-3xl font-bold text-white">
-            {/* Fallback avatar */}
             ?
           </div>
           {!muted && <audio ref={audioRef} autoPlay playsInline />}
         </div>
       )}
     </>
-  );
-};
+  )
+}
 
-const ControlButton = ({ 
-  icon, 
-  active, 
+const ControlButton = ({
+  icon,
+  active,
   danger = false,
-  onClick, 
-  tooltip 
-}: { 
-  icon: React.ReactNode; 
-  active: boolean; 
-  danger?: boolean;
-  onClick: () => void; 
-  tooltip: string; 
+  onClick,
+  tooltip,
+}: {
+  icon: React.ReactNode
+  active: boolean
+  danger?: boolean
+  onClick: () => void
+  tooltip: string
 }) => {
   return (
     <button
+      type="button"
       onClick={onClick}
       title={tooltip}
       className={`flex h-12 w-12 items-center justify-center rounded-full transition
@@ -180,5 +195,5 @@ const ControlButton = ({
     >
       {icon}
     </button>
-  );
-};
+  )
+}

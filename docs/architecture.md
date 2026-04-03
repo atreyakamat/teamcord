@@ -1,10 +1,10 @@
-# Nexus — Technical Architecture
+# TeamCord — Technical Architecture
 
 > "Discord is where your gaming friends hang out. This is where your team gets work done."
 
 ## Overview
 
-Nexus is a self-hosted, open-source team communication platform built specifically for small agencies and teams. It addresses the core pain points of using Discord for work: poor search, no client access control, knowledge lost in chat threads, and data privacy concerns.
+TeamCord is a self-hosted, open-source team communication platform built specifically for small agencies and teams. It addresses the core pain points of using Discord for work: poor search, no client access control, knowledge lost in chat threads, and data privacy concerns.
 
 ---
 
@@ -121,7 +121,7 @@ User types @agent <query>
 ## Monorepo Structure
 
 ```
-nexus/
+teamcord/
 ├── apps/
 │   ├── api/              # Fastify REST API
 │   │   └── src/
@@ -185,7 +185,7 @@ nexus/
 
 ## Key Differentiators vs Discord
 
-| Feature | Discord | Nexus |
+| Feature | Discord | TeamCord |
 |---------|---------|----------|
 | **Search** | Practically useless | PostgreSQL full-text search (pg_trgm) |
 | **Client access** | None (give clients full server) | Client Portal — scoped channel access |
@@ -201,8 +201,8 @@ nexus/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/atreyakamat/nexus
-cd nexus
+git clone https://github.com/atreyakamat/teamcord
+cd teamcord
 
 # 2. Copy and configure environment
 cp .env.example .env
@@ -212,12 +212,12 @@ cp .env.example .env
 docker compose up -d
 
 # 4. Pull an LLM model for the AI agent
-docker exec nexus-ollama-1 ollama pull llama3
+docker exec teamcord-ollama-1 ollama pull llama3
 
 # 5. Run database migrations
-docker exec nexus-api-1 node -e "/* migrations run on startup */"
+docker exec teamcord-api-1 node -e "/* migrations run on startup */"
 
-# 6. Open Nexus
+# 6. Open TeamCord
 open http://localhost:3000
 ```
 

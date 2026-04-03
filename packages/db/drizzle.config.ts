@@ -5,7 +5,7 @@ export default defineConfig({
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env["DATABASE_URL"] ?? "postgres://nexus:nexus@localhost:5432/nexus",
+    url: process.env["DATABASE_URL"] ?? "postgres://teamcord:teamcord@localhost:5432/teamcord",
   },
   verbose: true,
   strict: true,

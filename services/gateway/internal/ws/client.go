@@ -2,14 +2,15 @@ package ws
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/nexus/gateway/internal/auth"
-	"github.com/nexus/gateway/internal/protocol"
+	"github.com/teamcord/gateway/internal/auth"
+	"github.com/teamcord/gateway/internal/protocol"
 )
 
 const (
@@ -144,19 +145,64 @@ func (c *Client) handlePayload(p protocol.GatewayPayload) {
 		var subData map[string]interface{}
 		b, _ := json.Marshal(p.D)
 		json.Unmarshal(b, &subData)
-		if chID, ok := subData["channel_id"].(string); ok {
-			c.SubscribedChannels[chID] = true
-			c.Hub.SubscribeChannel(chID, c)
+
+		channelIDs := readChannelIDs(subData)
+		for _, channelID := range channelIDs {
+			c.SubscribedChannels[channelID] = true
+			c.Hub.SubscribeChannel(channelID, c)
 		}
 
 	case 101: // UNSUBSCRIBE
 		var unsubData map[string]interface{}
 		b, _ := json.Marshal(p.D)
 		json.Unmarshal(b, &unsubData)
-		if chID, ok := unsubData["channel_id"].(string); ok {
-			delete(c.SubscribedChannels, chID)
-			c.Hub.UnsubscribeChannel(chID, c)
+
+		channelIDs := readChannelIDs(unsubData)
+		for _, channelID := range channelIDs {
+			delete(c.SubscribedChannels, channelID)
+			c.Hub.UnsubscribeChannel(channelID, c)
 		}
+	}
+}
+
+func readChannelIDs(payload map[string]interface{}) []string {
+	if payload == nil {
+		return nil
+	}
+
+	if channelID, ok := normalizeChannelID(payload["channel_id"]); ok {
+		return []string{channelID}
+	}
+
+	rawChannelIDs, ok := payload["channel_ids"].([]interface{})
+	if !ok {
+		return nil
+	}
+
+	channelIDs := make([]string, 0, len(rawChannelIDs))
+	for _, rawChannelID := range rawChannelIDs {
+		if channelID, ok := normalizeChannelID(rawChannelID); ok {
+			channelIDs = append(channelIDs, channelID)
+		}
+	}
+	return channelIDs
+}
+
+func normalizeChannelID(raw interface{}) (string, bool) {
+	switch value := raw.(type) {
+	case string:
+		if value == "" {
+			return "", false
+		}
+		return value, true
+	case float64:
+		return fmt.Sprintf("%.0f", value), true
+	case int:
+		return fmt.Sprintf("%d", value), true
+	case int64:
+		return fmt.Sprintf("%d", value), true
+	default:
+		return "", false
 	}
 }
 

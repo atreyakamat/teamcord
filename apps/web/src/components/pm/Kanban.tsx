@@ -28,14 +28,14 @@ export const Kanban = ({ channelId }: { channelId: string }) => {
       id: 'in-progress',
       title: 'In Progress',
       tasks: [
-        { id: '3', title: 'Meilisearch indexing optimization', priority: 'high', assignee: 'nexus-bot' },
+        { id: '3', title: 'Meilisearch indexing optimization', priority: 'high', assignee: 'teamcord-bot' },
       ]
     },
     {
       id: 'done',
       title: 'Done',
       tasks: [
-        { id: '4', title: 'Rebrand TeamCord to Nexus', priority: 'high', assignee: 'ai-agent' },
+        { id: '4', title: 'Polish TeamCord launch branding', priority: 'high', assignee: 'ai-agent' },
       ]
     }
   ]);

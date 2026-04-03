@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/meilisearch/meilisearch-go"
-	"github.com/nexus/messaging/internal/message"
+	"github.com/teamcord/messaging/internal/message"
 )
 
 type Repository struct {

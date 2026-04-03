@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/nexus/messaging/internal/db"
+	"github.com/teamcord/messaging/internal/db"
 )
 
 type Channel struct {

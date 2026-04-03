@@ -1,4 +1,4 @@
-# Nexus
+# TeamCord
 
 > Discord is where your gaming friends hang out. **This is where your team gets work done.**
 
@@ -14,11 +14,11 @@ A self-hosted, open-source team communication platform built specifically for sm
 - 🔐 **Client Portal** - Scoped channel access for external clients
 - 🏠 **Self-Hostable** - Run on your own infrastructure with Docker
 
-## Why Nexus?
+## Why TeamCord?
 
-Discord is a consumer app being abused as a work tool. Nexus is a work tool from day one.
+Discord is a consumer app being abused as a work tool. TeamCord is a work tool from day one.
 
-| Pain Point | Nexus Solution |
+| Pain Point | TeamCord Solution |
 |-----------|-------------------|
 | Discord search is terrible | PostgreSQL full-text search — find anything, instantly |
 | Clients can't access your server safely | **Client Portal** — scoped channel access with invite tokens |
@@ -38,8 +38,8 @@ Discord is a consumer app being abused as a work tool. Nexus is a work tool from
 
 ```bash
 # Clone the repository
-git clone https://github.com/atreyakamat/nexus
-cd nexus
+git clone https://github.com/atreyakamat/teamcord
+cd teamcord
 
 # Run the setup script
 setup.bat
@@ -52,8 +52,8 @@ start-dev.bat
 
 ```bash
 # Clone the repository
-git clone https://github.com/atreyakamat/nexus
-cd nexus
+git clone https://github.com/atreyakamat/teamcord
+cd teamcord
 
 # Install dependencies
 pnpm install
@@ -72,8 +72,8 @@ pnpm dev
 
 ```bash
 # Build shared packages first
-pnpm --filter @nexus/types build
-pnpm --filter @nexus/db build
+pnpm --filter @teamcord/types build
+pnpm --filter @teamcord/db build
 
 # Start each service individually
 cd apps/api && pnpm dev        # API on http://localhost:3001
@@ -86,14 +86,14 @@ cd apps/web && pnpm dev        # Web on http://localhost:3000
 ```bash
 cp .env.example .env    # Edit JWT_SECRET and passwords
 docker compose up -d
-docker exec nexus-ollama-1 ollama pull llama3   # Optional: enable AI agent
+docker exec teamcord-ollama-1 ollama pull llama3   # Optional: enable AI agent
 open http://localhost:3000
 ```
 
 ## 📁 Project Structure
 
 ```
-nexus/
+teamcord/
 ├── apps/
 │   ├── api/        # Fastify REST API (auth, channels, messages, search)
 │   ├── gateway/    # WebSocket gateway (real-time via Redis pub/sub)
@@ -162,4 +162,4 @@ MIT — community edition is free forever. Self-host it, fork it, own your data.
 
 ---
 
-**Nexus** - Built for teams, not for gamers.
+**TeamCord** - Built for teams, not for gamers.

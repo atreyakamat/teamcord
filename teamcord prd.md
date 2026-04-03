@@ -1,4 +1,4 @@
-**Nexus**
+**TeamCord**
 
 The Team Communication Platform Built Right
 
@@ -18,7 +18,7 @@ with no searchability, collecting alarming amounts of user data,
 providing effectively no customer support, and degrading in performance
 with every update.
 
-Nexus is a purpose-built team communication platform that directly
+TeamCord is a purpose-built team communication platform that directly
 addresses every one of these failures. It is open-source and
 self-hostable, giving teams full control over their data. It ships with
 a built-in AI agent --- powered by a local LLM on the community edition
@@ -35,7 +35,7 @@ hierarchy that Discord\'s gaming-era design never had.
 
   -----------------------------------------------------------------------
 
-Nexus ships in three tiers: a fully-featured open-source community
+TeamCord ships in three tiers: a fully-featured open-source community
 edition for self-hosters, a managed cloud Plus tier for small agencies,
 and a Pro tier with client portals and white-labelling for professional
 services firms.
@@ -142,14 +142,14 @@ There is no concept of a \'project\', no way to give a client limited
 access, no async video messaging, and no structured way to capture what
 was decided in a conversation.
 
-**Nexus vs Discord: Feature Comparison**
+**TeamCord vs Discord: Feature Comparison**
 
-The table below compares Discord\'s current offering against Nexus
+The table below compares Discord\'s current offering against TeamCord
 across every major dimension of a professional team communication
 platform.
 
   ------------------------------------------------------------------------
-  **Feature**            **Discord**              **Nexus**
+  **Feature**            **Discord**              **TeamCord**
   ---------------------- ------------------------ ------------------------
   Data ownership         **Stored on Discord\'s   **Self-hosted or our
                          servers**                cloud**
@@ -226,7 +226,7 @@ platform.
 
 **Feature Deep Dive**
 
-Nexus is designed around four principles: information survives, privacy
+TeamCord is designed around four principles: information survives, privacy
 is not negotiable, async-first, and every team can run it regardless of
 technical skill.
 
@@ -322,7 +322,7 @@ paywall, no quality degradation on free tiers.
 
 **Discussion Threads and Knowledge Management**
 
-This is where Nexus diverges most sharply from Discord. Every piece of
+This is where TeamCord diverges most sharply from Discord. Every piece of
 knowledge generated in a conversation is capturable, structured, and
 permanently searchable.
 
@@ -368,7 +368,7 @@ permanently searchable.
 
 **AI Agent**
 
-The Nexus AI agent is always running in the background, ready to be
+The TeamCord AI agent is always running in the background, ready to be
 invoked with \@agent or a slash command. On the community edition it
 runs against a locally-hosted LLM via Ollama (Llama 3, Mistral, Phi-3).
 On Plus and Pro it runs against Claude (Anthropic). The tool set is
@@ -474,7 +474,7 @@ workspace.
                         channels only.
 
   **Branding**          Portal has a custom name and logo. Client sees
-                        your brand, not Nexus branding (Pro +
+                        your brand, not TeamCord branding (Pro +
                         white-label).
 
   **File sharing**      Share files with clients directly from workspace
@@ -491,7 +491,7 @@ workspace.
 
 **Technical Architecture**
 
-Nexus is built to be run by a single developer on a \$10/month VPS, or
+TeamCord is built to be run by a single developer on a \$10/month VPS, or
 scaled horizontally across a Kubernetes cluster. The same Docker Compose
 file that runs locally is the foundation for the cloud managed tier.
 
@@ -555,12 +555,12 @@ file that runs locally is the foundation for the cloud managed tier.
 The entire stack installs with a single command. No Kubernetes knowledge
 required for single-server deployments.
 
-curl -fsSL https://get.nexus.sh \| bash
+curl -fsSL https://get.teamcord.sh \| bash
 
 This script: pulls all Docker images, generates secrets and a .env file,
 starts Docker Compose, configures Caddy with automatic TLS, and prints
 your workspace URL. Total time from a fresh Ubuntu 22.04 VPS to a
-working Nexus instance: under five minutes.
+working TeamCord instance: under five minutes.
 
 Minimum server requirements:
 
@@ -598,7 +598,7 @@ Plus / Pro (Claude API):
 
 **Pricing**
 
-Nexus is free to self-host forever. The managed cloud tiers exist for
+TeamCord is free to self-host forever. The managed cloud tiers exist for
 teams who want zero ops overhead.
 
   ------------------------------------------------------------------------
@@ -705,7 +705,7 @@ teams who want zero ops overhead.
 
 -   Analytics dashboard for workspace admins
 
-**Why Nexus Wins**
+**Why TeamCord Wins**
 
 The market conditions for a Discord alternative have never been better.
 Discord is demonstrably getting worse --- not in users\' perception, but
@@ -721,14 +721,14 @@ libraries) has matured dramatically in the past two years.
 No major communication platform is meaningfully self-hostable today.
 Slack is fully SaaS. Discord is fully SaaS. Mattermost and Rocket.Chat
 are self-hostable but notoriously painful to operate and have never
-solved the Discord-native UX problem. Nexus is the first platform
+solved the Discord-native UX problem. TeamCord is the first platform
 designed for both audiences simultaneously: developers who want to own
 their stack completely, and non-technical teams who want to click a
 button and get a workspace.
 
 **The AI Agent as Default**
 
-Every other platform treats AI as an add-on integration. Nexus ships
+Every other platform treats AI as an add-on integration. TeamCord ships
 with an AI agent built into the product from day one. On the community
 edition, it runs locally --- meaning teams in privacy-sensitive
 industries (legal, healthcare, finance) get AI capabilities without any
@@ -740,13 +740,13 @@ commercial or open-source, currently offers.
 Small and mid-sized agencies are underserved by every existing tool.
 Slack is expensive and has no client portal concept. Discord is free but
 unusable for client work. Notion has docs but no real-time
-communication. Nexus\'s client portal feature --- letting agencies give
+communication. TeamCord\'s client portal feature --- letting agencies give
 clients a curated, branded view of relevant channels without workspace
 access --- solves a real pain that every agency feels and no tool
 addresses directly.
 
   -----------------------------------------------------------------------
-  *Nexus is not trying to replace Discord for gaming communities. It is
+  *TeamCord is not trying to replace Discord for gaming communities. It is
   replacing Discord for the millions of professional teams who adopted it
   as a stopgap and are actively looking for something better.*
 
@@ -757,12 +757,12 @@ addresses directly.
 For partnership enquiries, investor access, or early access to the
 managed cloud beta:
 
--   Website: nexus.sh
+-   Website: teamcord.sh
 
--   GitHub: github.com/nexus-platform/nexus
+-   GitHub: github.com/teamcord-platform/teamcord
 
--   Discord (ironic, we know): discord.gg/nexus-beta
+-   Discord (ironic, we know): discord.gg/teamcord-beta
 
--   Email: team@nexus.sh
+-   Email: team@teamcord.sh
 
-*Nexus --- Built for teams, not for gamers.*
+*TeamCord --- Built for teams, not for gamers.*

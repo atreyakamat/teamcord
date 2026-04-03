@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-# Nexus One-Command Installer
-echo "⚡ Starting Nexus Installation..."
+# TeamCord One-Command Installer
+echo "⚡ Starting TeamCord Installation..."
 
 # 1. Check Requirements
 if [ "$EUID" -ne 0 ]; then
@@ -29,20 +29,20 @@ MEILI_MASTER_KEY=$(openssl rand -hex 32)
 EOF
 
 # 4. Prompt for Domain
-read -p "Enter your domain (e.g., nexus.yourteam.com): " DOMAIN
+read -p "Enter your domain (e.g., teamcord.yourteam.com): " DOMAIN
 echo "DOMAIN=$DOMAIN" >> .env
 echo "API_URL=https://$DOMAIN/api" >> .env
 echo "GATEWAY_URL=wss://$DOMAIN/gateway" >> .env
 
 # 5. Build and Start
-echo "Starting Nexus services..."
+echo "Starting TeamCord services..."
 docker compose up -d
 
 # 6. Wait for health checks
 echo "Waiting for services to be healthy..."
 sleep 20
 
-echo "✓ Nexus is running at https://$DOMAIN"
+echo "✓ TeamCord is running at https://$DOMAIN"
 echo "✓ Admin panel: https://$DOMAIN/admin"
 echo "✓ AI Agent: Ready (Ollama)"
 echo "--------------------------------------------------"
