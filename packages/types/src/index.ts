@@ -165,6 +165,7 @@ export interface Attachment {
   filename: string;
   mime_type: string;
   mimeType?: string;
+  contentType?: string;
   size: number;
   width?: number;
   height?: number;
@@ -333,7 +334,7 @@ export interface FileMeta {
   size: number;
   width?: number;
   height?: number;
-  channel_id?: string;
+  channel_id?: number;
 }
 
 export interface FileUploadRequest {

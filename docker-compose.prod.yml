@@ -29,8 +29,8 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
       - JWT_SECRET=${JWT_SECRET}
-      - KEYCLOAK_ISSUER=${KEYCLOAK_INTERNAL_ISSUER:-http://keycloak:8080/realms/teamcord}
-      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-teamcord-web}
+      - KEYCLOAK_ISSUER=${KEYCLOAK_INTERNAL_ISSUER}
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
       - MEILISEARCH_URL=${MEILISEARCH_URL:-http://meilisearch:7700}
       - MEILISEARCH_KEY=${MEILISEARCH_KEY:-}
       - FILES_PUBLIC_URL=${FILES_PUBLIC_URL}
@@ -56,8 +56,8 @@ services:
       - REDIS_URL=${REDIS_URL}
       - JWT_SECRET=${JWT_SECRET}
       - NATS_URL=${NATS_URL:-nats://nats:4222}
-      - KEYCLOAK_ISSUER=${KEYCLOAK_INTERNAL_ISSUER:-http://keycloak:8080/realms/teamcord}
-      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-teamcord-web}
+      - KEYCLOAK_ISSUER=${KEYCLOAK_INTERNAL_ISSUER}
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
     deploy:
       resources:
         limits:
@@ -123,7 +123,7 @@ services:
   # ─── Database ──────────────────────────────────────────────────────────────
   postgres:
     environment:
-      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     deploy:
@@ -157,7 +157,7 @@ services:
   # ─── MinIO ─────────────────────────────────────────────────────────────────
   minio:
     environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-teamcord}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     volumes:
       - ./data/minio:/data
@@ -220,11 +220,11 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - MINIO_ENDPOINT=${MINIO_ENDPOINT:-minio:9000}
-      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-teamcord}
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
       - MINIO_BUCKET=${MINIO_BUCKET:-teamcord-files}
-      - KEYCLOAK_ISSUER=${KEYCLOAK_INTERNAL_ISSUER:-http://keycloak:8080/realms/teamcord}
-      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-teamcord-web}
+      - KEYCLOAK_ISSUER=${KEYCLOAK_INTERNAL_ISSUER}
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
       - FILES_PUBLIC_URL=${FILES_PUBLIC_URL}
     deploy:
       resources:
