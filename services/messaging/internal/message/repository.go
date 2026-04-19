@@ -104,3 +104,9 @@ func (r *Repository) Delete(ctx context.Context, id int64) error {
 	_, err := r.DB.Pool.Exec(ctx, query, id)
 	return err
 }
+
+func (r *Repository) UpdateAttachments(ctx context.Context, id int64, attachments json.RawMessage) error {
+	query := `UPDATE messages SET attachments = $1 WHERE id = $2`
+	_, err := r.DB.Pool.Exec(ctx, query, attachments, id)
+	return err
+}

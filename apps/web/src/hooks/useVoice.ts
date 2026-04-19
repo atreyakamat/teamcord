@@ -26,25 +26,32 @@ export const useVoice = () => {
   const sendTransportRef = useRef<mediasoupClient.types.Transport | null>(null)
   const recvTransportRef = useRef<mediasoupClient.types.Transport | null>(null)
   const audioProducerRef = useRef<mediasoupClient.types.Producer | null>(null)
-  const videoProducerRef = useRef<mediasoupClient.types.Producer | null>(null)
+  const cameraProducerRef = useRef<mediasoupClient.types.Producer | null>(null)
+  const screenProducerRef = useRef<mediasoupClient.types.Producer | null>(null)
   const consumersRef = useRef<Map<string, mediasoupClient.types.Consumer>>(new Map())
   const cameraTrackRef = useRef<MediaStreamTrack | null>(null)
   const screenTrackRef = useRef<MediaStreamTrack | null>(null)
 
-  const rebuildLocalStream = useCallback((nextVideoTrack: MediaStreamTrack | null) => {
+  const rebuildLocalStream = useCallback(() => {
     setLocalStream((current) => {
       const audioTracks = current?.getAudioTracks() || []
       const nextTracks = [...audioTracks]
-      if (nextVideoTrack) {
-        nextTracks.push(nextVideoTrack)
+      const activeVideoTrack = screenTrackRef.current || cameraTrackRef.current
+      if (activeVideoTrack) {
+        nextTracks.push(activeVideoTrack)
       }
       return nextTracks.length > 0 ? new MediaStream(nextTracks) : null
     })
   }, [])
 
-  const stopVideoProducer = useCallback(() => {
-    videoProducerRef.current?.close()
-    videoProducerRef.current = null
+  const stopCameraProducer = useCallback(() => {
+    cameraProducerRef.current?.close()
+    cameraProducerRef.current = null
+  }, [])
+
+  const stopScreenProducer = useCallback(() => {
+    screenProducerRef.current?.close()
+    screenProducerRef.current = null
   }, [])
 
   const clearCameraTrack = useCallback(() => {
@@ -62,16 +69,16 @@ export const useVoice = () => {
   }, [])
 
   const stopScreenShareInternal = useCallback(async () => {
-    stopVideoProducer()
+    stopScreenProducer()
     clearScreenTrack()
-    rebuildLocalStream(cameraTrackRef.current)
+    rebuildLocalStream()
     setIsScreenSharing(false)
     socketRef.current?.emit('updateVoiceState', {
       selfMute: isMuted,
       selfDeaf: false,
       selfVideo: isVideoOn,
     })
-  }, [clearScreenTrack, isMuted, isVideoOn, rebuildLocalStream, stopVideoProducer])
+  }, [clearScreenTrack, isMuted, isVideoOn, rebuildLocalStream, stopScreenProducer])
 
   useEffect(() => {
     socketRef.current = io(VOICE_URL, {
@@ -345,7 +352,8 @@ export const useVoice = () => {
 
     audioProducerRef.current?.close()
     audioProducerRef.current = null
-    stopVideoProducer()
+    stopCameraProducer()
+    stopScreenProducer()
 
     sendTransportRef.current?.close()
     recvTransportRef.current?.close()
@@ -361,7 +369,7 @@ export const useVoice = () => {
     setIsMuted(false)
     setIsVideoOn(false)
     setIsScreenSharing(false)
-  }, [clearCameraTrack, clearScreenTrack, localStream, stopVideoProducer])
+  }, [clearCameraTrack, clearScreenTrack, localStream, stopCameraProducer, stopScreenProducer])
 
   const toggleMute = useCallback(() => {
     if (!audioProducerRef.current) {
@@ -389,9 +397,9 @@ export const useVoice = () => {
     }
 
     if (isVideoOn) {
-      stopVideoProducer()
+      stopCameraProducer()
       clearCameraTrack()
-      rebuildLocalStream(screenTrackRef.current)
+      rebuildLocalStream()
       setIsVideoOn(false)
       socketRef.current?.emit('updateVoiceState', {
         selfMute: isMuted,
@@ -409,10 +417,11 @@ export const useVoice = () => {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true })
       const videoTrack = stream.getVideoTracks()[0]
       cameraTrackRef.current = videoTrack
-      videoProducerRef.current = await sendTransportRef.current.produce({
+      cameraProducerRef.current = await sendTransportRef.current.produce({
         track: videoTrack,
+        appData: { source: 'camera' },
       })
-      rebuildLocalStream(videoTrack)
+      rebuildLocalStream()
       setIsVideoOn(true)
       socketRef.current?.emit('updateVoiceState', {
         selfMute: isMuted,
@@ -429,7 +438,7 @@ export const useVoice = () => {
     isVideoOn,
     rebuildLocalStream,
     stopScreenShareInternal,
-    stopVideoProducer,
+    stopCameraProducer,
   ])
 
   const toggleScreenShare = useCallback(async () => {
@@ -443,8 +452,9 @@ export const useVoice = () => {
     }
 
     if (isVideoOn) {
-      stopVideoProducer()
+      stopCameraProducer()
       clearCameraTrack()
+      rebuildLocalStream()
       setIsVideoOn(false)
     }
 
@@ -459,11 +469,11 @@ export const useVoice = () => {
         })
       }
 
-      videoProducerRef.current = await sendTransportRef.current.produce({
+      screenProducerRef.current = await sendTransportRef.current.produce({
         track: screenTrack,
         appData: { source: 'screen' },
       })
-      rebuildLocalStream(screenTrack)
+      rebuildLocalStream()
       setIsScreenSharing(true)
       socketRef.current?.emit('updateVoiceState', {
         selfMute: isMuted,
@@ -480,7 +490,7 @@ export const useVoice = () => {
     isVideoOn,
     rebuildLocalStream,
     stopScreenShareInternal,
-    stopVideoProducer,
+    stopCameraProducer,
   ])
 
   return {

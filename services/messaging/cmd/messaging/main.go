@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/url"
 	"net/http"
 	"os"
 	"strconv"
@@ -21,6 +22,7 @@ import (
 	"github.com/teamcord/messaging/internal/clientportal"
 	"github.com/teamcord/messaging/internal/db"
 	"github.com/teamcord/messaging/internal/decision"
+	"github.com/teamcord/messaging/internal/filemeta"
 	"github.com/teamcord/messaging/internal/message"
 	"github.com/teamcord/messaging/internal/reaction"
 	"github.com/teamcord/messaging/internal/search"
@@ -39,6 +41,7 @@ type Server struct {
 	searchRepo    *search.Repository
 	portalRepo    *clientportal.Repository
 	reactionRepo  *reaction.Repository
+	fileRepo      *filemeta.Repository
 	userRepo      *user.Repository
 	js            nats.JetStreamContext
 }
@@ -61,6 +64,10 @@ func main() {
 	natsURL := os.Getenv("NATS_URL")
 	meiliURL := os.Getenv("MEILISEARCH_URL")
 	meiliKey := os.Getenv("MEILISEARCH_KEY")
+	filesPublicURL := os.Getenv("FILES_PUBLIC_URL")
+	if filesPublicURL == "" {
+		filesPublicURL = "http://localhost:3003"
+	}
 
 	ctx := context.Background()
 	database, err := db.NewDatabase(ctx, dbURL)
@@ -98,6 +105,7 @@ func main() {
 		searchRepo:    searchRepo,
 		portalRepo:    &clientportal.Repository{DB: database},
 		reactionRepo:  &reaction.Repository{DB: database},
+		fileRepo:      &filemeta.Repository{DB: database, PublicURL: filesPublicURL},
 		userRepo:      userRepo,
 		js:            js,
 	}
@@ -627,11 +635,33 @@ func (s *Server) CreateMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	channelRecord, err := s.channelRepo.Get(r.Context(), channelID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to load channel metadata")
+		return
+	}
+
+	linkedAttachments, err := s.fileRepo.LinkToMessage(
+		r.Context(),
+		messageRecord.ID,
+		channelID,
+		channelRecord.WorkspaceID,
+		currentUser.ID,
+		messageRecord.Attachments,
+	)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	messageRecord.Attachments = linkedAttachments
+
+	if err := s.repo.UpdateAttachments(r.Context(), messageRecord.ID, linkedAttachments); err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to persist message attachments")
+		return
+	}
+
 	if s.searchRepo != nil {
-		channelRecord, err := s.channelRepo.Get(r.Context(), channelID)
-		if err == nil && channelRecord != nil {
-			go s.searchRepo.IndexMessage(context.Background(), &messageRecord, channelRecord.WorkspaceID)
-		}
+		go s.searchRepo.IndexMessage(context.Background(), &messageRecord, channelRecord.WorkspaceID)
 	}
 
 	response, err := s.buildMessageResponse(r.Context(), &messageRecord, map[int64]*user.User{currentUser.ID: currentUser})
@@ -787,7 +817,11 @@ func (s *Server) AddReaction(w http.ResponseWriter, r *http.Request) {
 
 	channelID, _ := strconv.ParseInt(chi.URLParam(r, "channelID"), 10, 64)
 	messageID, _ := strconv.ParseInt(chi.URLParam(r, "messageID"), 10, 64)
-	emoji := chi.URLParam(r, "emoji")
+	emoji, err := url.PathUnescape(chi.URLParam(r, "emoji"))
+	if err != nil || strings.TrimSpace(emoji) == "" {
+		writeError(w, http.StatusBadRequest, "Invalid emoji")
+		return
+	}
 
 	if err := s.reactionRepo.Add(r.Context(), &reaction.Reaction{
 		MessageID: messageID,
@@ -816,7 +850,11 @@ func (s *Server) RemoveReaction(w http.ResponseWriter, r *http.Request) {
 
 	channelID, _ := strconv.ParseInt(chi.URLParam(r, "channelID"), 10, 64)
 	messageID, _ := strconv.ParseInt(chi.URLParam(r, "messageID"), 10, 64)
-	emoji := chi.URLParam(r, "emoji")
+	emoji, err := url.PathUnescape(chi.URLParam(r, "emoji"))
+	if err != nil || strings.TrimSpace(emoji) == "" {
+		writeError(w, http.StatusBadRequest, "Invalid emoji")
+		return
+	}
 
 	if err := s.reactionRepo.Remove(r.Context(), messageID, currentUser.ID, emoji); err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
@@ -932,17 +970,24 @@ func (s *Server) currentUser(r *http.Request) (*user.User, error) {
 		return nil, err
 	}
 
-	userID, err := strconv.ParseInt(claims.Subject, 10, 64)
-	if err != nil {
-		return nil, err
+	if userID, parseErr := strconv.ParseInt(claims.Subject, 10, 64); parseErr == nil {
+		currentUser, err := s.userRepo.GetByID(r.Context(), userID)
+		if err != nil {
+			return nil, err
+		}
+		if currentUser != nil {
+			return currentUser, nil
+		}
 	}
 
-	currentUser, err := s.userRepo.GetByID(r.Context(), userID)
+	currentUser, err := s.userRepo.EnsureFromKeycloak(r.Context(), user.KeycloakIdentity{
+		Subject:           claims.Subject,
+		Email:             claims.Email,
+		PreferredUsername: claims.PreferredUsername,
+		Name:              claims.Name,
+	})
 	if err != nil {
 		return nil, err
-	}
-	if currentUser == nil {
-		return nil, fmt.Errorf("user not found")
 	}
 	return currentUser, nil
 }

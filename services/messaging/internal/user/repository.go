@@ -41,6 +41,13 @@ type AuthUser struct {
 	PasswordHash string
 }
 
+type KeycloakIdentity struct {
+	Subject           string
+	Email             string
+	PreferredUsername string
+	Name              string
+}
+
 type Repository struct {
 	DB *db.Database
 }
@@ -195,6 +202,20 @@ func (r *Repository) GetByID(ctx context.Context, userID int64) (*User, error) {
 	return userRecord, err
 }
 
+func (r *Repository) GetByKeycloakID(ctx context.Context, subject string) (*User, error) {
+	row := r.DB.Pool.QueryRow(ctx, `
+		SELECT id, email, username, discriminator, avatar_url, status, custom_status, created_at, last_seen_at
+		FROM users
+		WHERE keycloak_id = $1::uuid
+	`, subject)
+
+	userRecord, err := scanUser(row)
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
+	return userRecord, err
+}
+
 func (r *Repository) FindByIdentifier(ctx context.Context, identifier string) (*User, error) {
 	identifier = strings.TrimSpace(identifier)
 	if identifier == "" {
@@ -213,6 +234,62 @@ func (r *Repository) FindByIdentifier(ctx context.Context, identifier string) (*
 		return nil, nil
 	}
 	return userRecord, err
+}
+
+func (r *Repository) EnsureFromKeycloak(ctx context.Context, identity KeycloakIdentity) (*User, error) {
+	identity.Subject = strings.TrimSpace(identity.Subject)
+	identity.Email = strings.TrimSpace(identity.Email)
+	identity.PreferredUsername = strings.TrimSpace(identity.PreferredUsername)
+	identity.Name = strings.TrimSpace(identity.Name)
+	if identity.Subject == "" {
+		return nil, fmt.Errorf("token subject is required")
+	}
+	if identity.Email == "" {
+		return nil, fmt.Errorf("email claim is required")
+	}
+
+	userRecord, err := r.GetByKeycloakID(ctx, identity.Subject)
+	if err != nil {
+		return nil, err
+	}
+	if userRecord != nil {
+		return userRecord, nil
+	}
+
+	existingByEmail, err := r.getByEmail(ctx, identity.Email)
+	if err != nil {
+		return nil, err
+	}
+	if existingByEmail != nil {
+		if _, err := r.DB.Pool.Exec(ctx, `
+			UPDATE users
+			SET keycloak_id = $1::uuid
+			WHERE id = $2
+		`, identity.Subject, existingByEmail.ID); err != nil {
+			return nil, err
+		}
+		return r.GetByID(ctx, existingByEmail.ID)
+	}
+
+	username := identity.PreferredUsername
+	if username == "" {
+		username = strings.Split(identity.Email, "@")[0]
+	}
+	if username == "" && identity.Name != "" {
+		username = strings.ToLower(strings.ReplaceAll(identity.Name, " ", "_"))
+	}
+	if username == "" {
+		username = fmt.Sprintf("user_%s", strings.ReplaceAll(identity.Subject, "-", ""))
+	}
+	discriminator := fmt.Sprintf("%04d", rand.New(rand.NewSource(time.Now().UnixNano())).Intn(10000))
+
+	row := r.DB.Pool.QueryRow(ctx, `
+		INSERT INTO users (email, username, discriminator, status, keycloak_id)
+		VALUES ($1, $2, $3, 'online', $4::uuid)
+		RETURNING id, email, username, discriminator, avatar_url, status, custom_status, created_at, last_seen_at
+	`, identity.Email, username, discriminator, identity.Subject)
+
+	return scanUser(row)
 }
 
 func (r *Repository) ListWorkspaceIDs(ctx context.Context, userID int64) ([]int64, error) {
@@ -426,6 +503,20 @@ func slugify(input string) string {
 	}
 
 	return strings.Trim(builder.String(), "-")
+}
+
+func (r *Repository) getByEmail(ctx context.Context, email string) (*User, error) {
+	row := r.DB.Pool.QueryRow(ctx, `
+		SELECT id, email, username, discriminator, avatar_url, status, custom_status, created_at, last_seen_at
+		FROM users
+		WHERE lower(email) = lower($1)
+	`, email)
+
+	userRecord, err := scanUser(row)
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
+	return userRecord, err
 }
 
 func humanizeUsername(username string) string {

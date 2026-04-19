@@ -7,7 +7,7 @@ echo.
 cd /d %~dp0
 
 echo Starting Docker infrastructure...
-docker compose up -d postgres redis minio
+docker compose up -d postgres redis minio keycloak
 
 echo.
 echo Starting development servers in separate windows...
@@ -21,7 +21,11 @@ echo [2] Starting Gateway server (ws://localhost:3002)...
 start "TeamCord Gateway" cmd /k "cd /d %~dp0 && corepack pnpm dev:gateway"
 timeout /t 2 /nobreak >nul
 
-echo [3] Starting Web UI (http://localhost:3000)...
+echo [3] Starting Files service (http://localhost:3003)...
+start "TeamCord Files" cmd /k "cd /d %~dp0 && corepack pnpm dev:files"
+timeout /t 3 /nobreak >nul
+
+echo [4] Starting Web UI (http://localhost:3000)...
 start "TeamCord Web" cmd /k "cd /d %~dp0 && corepack pnpm dev:web"
 timeout /t 3 /nobreak >nul
 
@@ -32,6 +36,8 @@ echo.
 echo Web UI:    http://localhost:3000
 echo Messaging: http://localhost:3001
 echo Gateway:   ws://localhost:3002
+echo Files:     http://localhost:3003
+echo Keycloak:  http://localhost:8080
 echo ================================================================
 echo.
 echo Press any key to open TeamCord in your browser...

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Bell,
   Gift,
@@ -22,9 +22,23 @@ interface ChatAreaProps {
 
 const ChatArea = ({ onToggleMemberList }: ChatAreaProps) => {
   const selectedChannelId = useChannelStore((state) => state.selectedChannelId)
+  const selectedWorkspaceId = useChannelStore((state) => state.selectedWorkspaceId)
+  const setSelectedChannel = useChannelStore((state) => state.setSelectedChannel)
   const channels = useChannelStore((state) => state.channels)
   const channel = channels.find((currentChannel) => currentChannel.id === selectedChannelId)
   const [inputValue, setInputValue] = useState('')
+  const [searchValue, setSearchValue] = useState('')
+  const [searchResults, setSearchResults] = useState<
+    { id: string; channelId: string; content: string; createdAt?: string }[]
+  >([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [searchError, setSearchError] = useState('')
+  const [showSearchResults, setShowSearchResults] = useState(false)
+
+  const channelsById = useMemo(
+    () => new Map(channels.map((currentChannel) => [currentChannel.id, currentChannel])),
+    [channels]
+  )
 
   const handleKeyDown = async (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter' && inputValue.trim() && selectedChannelId) {
@@ -42,6 +56,60 @@ const ChatArea = ({ onToggleMemberList }: ChatAreaProps) => {
       }
     }
   }
+
+  useEffect(() => {
+    const query = searchValue.trim()
+    if (query.length < 2 || !selectedWorkspaceId) {
+      setSearchResults([])
+      setSearchError('')
+      return
+    }
+
+    let ignore = false
+    const timer = window.setTimeout(async () => {
+      setSearchLoading(true)
+      setSearchError('')
+      try {
+        const params = new URLSearchParams({ q: query })
+        const response = await apiFetch(`/api/v1/workspaces/${selectedWorkspaceId}/search?${params}`)
+        if (!response.ok) {
+          throw new Error('Search is not available for this workspace yet.')
+        }
+
+        const payload = (await response.json()) as {
+          data?: { hits?: Array<Record<string, unknown>> }
+        }
+        if (ignore) {
+          return
+        }
+
+        const hits = payload?.data?.hits || []
+        setSearchResults(
+          hits.map((hit) => ({
+            id: String(hit.id ?? ''),
+            channelId: String(hit.channel_id ?? ''),
+            content: String(hit.content ?? ''),
+            createdAt: hit.created_at ? String(hit.created_at) : undefined,
+          }))
+        )
+      } catch (error) {
+        if (!ignore) {
+          console.error('Failed to search messages:', error)
+          setSearchResults([])
+          setSearchError('Search is unavailable right now.')
+        }
+      } finally {
+        if (!ignore) {
+          setSearchLoading(false)
+        }
+      }
+    }, 320)
+
+    return () => {
+      ignore = true
+      window.clearTimeout(timer)
+    }
+  }, [searchValue, selectedWorkspaceId])
 
   return (
     <div className="flex flex-grow flex-col overflow-hidden bg-dc-primary">
@@ -65,8 +133,52 @@ const ChatArea = ({ onToggleMemberList }: ChatAreaProps) => {
               type="text"
               placeholder="Search"
               className="h-6 w-36 rounded bg-dc-tertiary px-2 text-xs focus:outline-none"
+              value={searchValue}
+              onFocus={() => setShowSearchResults(true)}
+              onBlur={() => {
+                window.setTimeout(() => setShowSearchResults(false), 120)
+              }}
+              onChange={(event) => setSearchValue(event.target.value)}
             />
             <Search size={14} className="absolute right-2 top-1.5" />
+
+            {showSearchResults && searchValue.trim().length >= 2 && (
+              <div className="absolute right-0 top-8 z-30 w-80 rounded border border-dc-border bg-dc-secondary p-2 shadow-2xl">
+                {searchLoading && (
+                  <div className="px-2 py-2 text-xs text-dc-muted">Searching...</div>
+                )}
+
+                {!searchLoading && searchError && (
+                  <div className="px-2 py-2 text-xs text-[#f7b4b5]">{searchError}</div>
+                )}
+
+                {!searchLoading && !searchError && searchResults.length === 0 && (
+                  <div className="px-2 py-2 text-xs text-dc-muted">No messages found.</div>
+                )}
+
+                {!searchLoading &&
+                  !searchError &&
+                  searchResults.map((result) => (
+                    <button
+                      key={`${result.channelId}-${result.id}`}
+                      type="button"
+                      className="flex w-full flex-col items-start rounded px-2 py-1.5 text-left transition hover:bg-dc-hover"
+                      onMouseDown={(event) => {
+                        event.preventDefault()
+                        if (result.channelId) {
+                          setSelectedChannel(result.channelId)
+                        }
+                        setShowSearchResults(false)
+                      }}
+                    >
+                      <span className="truncate text-xs font-semibold text-dc-normal">
+                        #{channelsById.get(result.channelId)?.name || 'channel'}
+                      </span>
+                      <span className="truncate text-xs text-dc-muted">{result.content || '(no text)'}</span>
+                    </button>
+                  ))}
+              </div>
+            )}
           </div>
 
           <Inbox size={24} className="cursor-pointer hover:text-dc-normal" />

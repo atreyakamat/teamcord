@@ -49,11 +49,11 @@ call corepack pnpm --filter @teamcord/db build
 echo       Shared packages built
 echo.
 
-echo [5/6] Starting Docker infrastructure (postgres, redis, minio)...
-docker compose up -d postgres redis minio
+echo [5/6] Starting Docker infrastructure (postgres, redis, minio, keycloak)...
+docker compose up -d postgres redis minio keycloak
 if %ERRORLEVEL% NEQ 0 (
     echo WARNING: Docker services failed to start. Start them manually with:
-    echo          docker compose up -d postgres redis minio
+    echo          docker compose up -d postgres redis minio keycloak
 ) else (
     echo       Docker services started
     echo       Waiting 5 seconds for PostgreSQL to initialize...

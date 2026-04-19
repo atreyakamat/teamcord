@@ -20,6 +20,7 @@ services:
       - messaging
       - web
       - gateway
+      - files
 
   # ─── Messaging Service ─────────────────────────────────────────────────────
   messaging:
@@ -28,12 +29,11 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
       - JWT_SECRET=${JWT_SECRET}
+      - KEYCLOAK_ISSUER=${KEYCLOAK_INTERNAL_ISSUER:-http://keycloak:8080/realms/teamcord}
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-teamcord-web}
       - MEILISEARCH_URL=${MEILISEARCH_URL:-http://meilisearch:7700}
       - MEILISEARCH_KEY=${MEILISEARCH_KEY:-}
-      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-minio:9000}
-      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-teamcord}
-      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
-      - S3_BUCKET=${S3_BUCKET:-teamcord-files}
+      - FILES_PUBLIC_URL=${FILES_PUBLIC_URL}
       - NATS_URL=${NATS_URL:-nats://nats:4222}
     deploy:
       resources:
@@ -56,6 +56,8 @@ services:
       - REDIS_URL=${REDIS_URL}
       - JWT_SECRET=${JWT_SECRET}
       - NATS_URL=${NATS_URL:-nats://nats:4222}
+      - KEYCLOAK_ISSUER=${KEYCLOAK_INTERNAL_ISSUER:-http://keycloak:8080/realms/teamcord}
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-teamcord-web}
     deploy:
       resources:
         limits:
@@ -71,6 +73,9 @@ services:
       - NODE_ENV=production
       - VITE_API_URL=${PUBLIC_URL:-}
       - VITE_GATEWAY_URL=${WS_URL:-}
+      - VITE_KEYCLOAK_URL=${KEYCLOAK_URL:-}
+      - VITE_KEYCLOAK_REALM=${KEYCLOAK_REALM:-teamcord}
+      - VITE_KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-teamcord-web}
     deploy:
       resources:
         limits:
@@ -211,3 +216,21 @@ services:
     # environment:
     #   - NVIDIA_VISIBLE_DEVICES=all
 
+  files:
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-minio:9000}
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-teamcord}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - MINIO_BUCKET=${MINIO_BUCKET:-teamcord-files}
+      - KEYCLOAK_ISSUER=${KEYCLOAK_INTERNAL_ISSUER:-http://keycloak:8080/realms/teamcord}
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-teamcord-web}
+      - FILES_PUBLIC_URL=${FILES_PUBLIC_URL}
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M

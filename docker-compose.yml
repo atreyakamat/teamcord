@@ -134,6 +134,8 @@ services:
       REDIS_URL: redis://redis:6379
       NATS_URL: nats://nats:4222
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production-please}
+      KEYCLOAK_ISSUER: ${KEYCLOAK_INTERNAL_ISSUER:-http://keycloak:8080/realms/teamcord}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-teamcord-web}
       PORT: 3002
     ports:
       - "3002:3002"
@@ -153,8 +155,12 @@ services:
       DATABASE_URL: postgres://teamcord:${POSTGRES_PASSWORD:-nexus_secret}@postgres:5432/teamcord?sslmode=disable
       NATS_URL: nats://nats:4222
       REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-please}
+      KEYCLOAK_ISSUER: ${KEYCLOAK_INTERNAL_ISSUER:-http://keycloak:8080/realms/teamcord}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-teamcord-web}
       MEILISEARCH_URL: http://meilisearch:7700
       MEILISEARCH_KEY: ${MEILI_MASTER_KEY:-nexus_meili_key}
+      FILES_PUBLIC_URL: ${FILES_PUBLIC_URL:-http://localhost:3003}
     depends_on:
       postgres:
         condition: service_healthy
@@ -203,11 +209,21 @@ services:
     container_name: teamcord-files
     restart: unless-stopped
     environment:
+      DATABASE_URL: postgres://teamcord:${POSTGRES_PASSWORD:-nexus_secret}@postgres:5432/teamcord?sslmode=disable
       MINIO_ENDPOINT: teamcord-minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-teamcord}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-nexus_secret}
+      MINIO_BUCKET: ${MINIO_BUCKET:-teamcord-files}
+      KEYCLOAK_ISSUER: ${KEYCLOAK_INTERNAL_ISSUER:-http://keycloak:8080/realms/teamcord}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-teamcord-web}
+      FILES_PUBLIC_URL: ${FILES_PUBLIC_URL:-http://localhost:3003}
+      PORT: 3003
+    ports:
+      - "3003:3003"
     depends_on:
       minio:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
 
   # ─── Apps ───────────────────────────────────────────────────────────────────
@@ -221,6 +237,9 @@ services:
     environment:
       VITE_API_URL: http://localhost:3001
       VITE_GATEWAY_URL: ws://localhost:3002
+      VITE_KEYCLOAK_URL: http://localhost:8080
+      VITE_KEYCLOAK_REALM: ${KEYCLOAK_REALM:-teamcord}
+      VITE_KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-teamcord-web}
     ports:
       - "${WEB_PORT:-3010}:3000"
 

@@ -22,6 +22,11 @@
   handle /voice/* {
     reverse_proxy voice:3004
   }
+
+  # Files service signed URL handoff
+  handle /f/* {
+    reverse_proxy files:3003
+  }
   
   # MinIO (S3) - presigned URLs
   handle /files/* {

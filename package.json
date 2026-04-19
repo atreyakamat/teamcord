@@ -16,6 +16,7 @@
     "dev:web": "corepack pnpm --filter @teamcord/web dev",
     "dev:messaging": "cd services/messaging && go run ./cmd/messaging",
     "dev:gateway": "cd services/gateway && go run ./cmd/gateway",
+    "dev:files": "cd services/files && go run ./cmd/files",
     "dev:voice": "cd services/voice && npm run dev",
     "build": "corepack pnpm --filter @teamcord/types build && corepack pnpm --filter @teamcord/db build && corepack pnpm --filter @teamcord/web build && corepack pnpm --filter appsdesktop build",
     "lint": "corepack pnpm -r --if-present lint",

@@ -10,7 +10,7 @@ import { useChannelStore } from '../stores/channels'
 
 const ProductShell = () => {
   const [showMemberList, setShowMemberList] = useState(true)
-  const { isAuthenticated, token, user, workspaces, fetchCurrentUser, fetchWorkspaces, logout } =
+  const { isAuthenticated, token, user, workspaces, fetchCurrentUser, fetchWorkspaces, handleCallback, logout } =
     useAuthStore()
   const {
     selectedChannelId,
@@ -23,6 +23,36 @@ const ProductShell = () => {
     fetchChannels,
   } = useChannelStore()
   const [isBootstrapping, setIsBootstrapping] = useState(Boolean(token))
+
+  useEffect(() => {
+    if (token) {
+      return
+    }
+
+    let cancelled = false
+    const hasCallbackParams =
+      typeof window !== 'undefined' &&
+      window.location.search.includes('code=') &&
+      window.location.search.includes('state=')
+    if (!hasCallbackParams) {
+      return
+    }
+
+    setIsBootstrapping(true)
+    handleCallback()
+      .catch((error) => {
+        console.error('Failed to complete Keycloak callback:', error)
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsBootstrapping(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [handleCallback, token])
 
   useEffect(() => {
     if (!token) {
