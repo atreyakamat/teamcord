@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: teamcord
       POSTGRES_USER: teamcord
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexus_secret}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -55,7 +55,7 @@ services:
     container_name: teamcord-meilisearch
     restart: unless-stopped
     environment:
-      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-nexus_meili_key}
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
       MEILI_ENV: ${MEILI_ENV:-development}
     volumes:
       - meilisearch_data:/meili_data
@@ -73,8 +73,8 @@ services:
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-teamcord}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-nexus_secret}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
       - minio_data:/data
     ports:
@@ -93,11 +93,11 @@ services:
     restart: unless-stopped
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-nexus_admin_secret}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/teamcord
       KC_DB_USERNAME: teamcord
-      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-nexus_secret}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "${KEYCLOAK_PORT:-8080}:8080"
     depends_on:
@@ -133,9 +133,9 @@ services:
     environment:
       REDIS_URL: redis://redis:6379
       NATS_URL: nats://nats:4222
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-please}
-      KEYCLOAK_ISSUER: ${KEYCLOAK_INTERNAL_ISSUER:-http://keycloak:8080/realms/teamcord}
-      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-teamcord-web}
+      JWT_SECRET: ${JWT_SECRET}
+      KEYCLOAK_ISSUER: ${KEYCLOAK_INTERNAL_ISSUER}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
       PORT: 3002
     ports:
       - "3002:3002"
@@ -152,15 +152,15 @@ services:
     container_name: teamcord-messaging
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://teamcord:${POSTGRES_PASSWORD:-nexus_secret}@postgres:5432/teamcord?sslmode=disable
+      DATABASE_URL: postgres://teamcord:${POSTGRES_PASSWORD}@postgres:5432/teamcord?sslmode=disable
       NATS_URL: nats://nats:4222
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-please}
-      KEYCLOAK_ISSUER: ${KEYCLOAK_INTERNAL_ISSUER:-http://keycloak:8080/realms/teamcord}
-      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-teamcord-web}
+      JWT_SECRET: ${JWT_SECRET}
+      KEYCLOAK_ISSUER: ${KEYCLOAK_INTERNAL_ISSUER}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
       MEILISEARCH_URL: http://meilisearch:7700
-      MEILISEARCH_KEY: ${MEILI_MASTER_KEY:-nexus_meili_key}
-      FILES_PUBLIC_URL: ${FILES_PUBLIC_URL:-http://localhost:3003}
+      MEILISEARCH_KEY: ${MEILI_MASTER_KEY}
+      FILES_PUBLIC_URL: ${FILES_PUBLIC_URL}
     depends_on:
       postgres:
         condition: service_healthy
@@ -209,14 +209,14 @@ services:
     container_name: teamcord-files
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://teamcord:${POSTGRES_PASSWORD:-nexus_secret}@postgres:5432/teamcord?sslmode=disable
+      DATABASE_URL: postgres://teamcord:${POSTGRES_PASSWORD}@postgres:5432/teamcord?sslmode=disable
       MINIO_ENDPOINT: teamcord-minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-teamcord}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-nexus_secret}
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_BUCKET: ${MINIO_BUCKET:-teamcord-files}
-      KEYCLOAK_ISSUER: ${KEYCLOAK_INTERNAL_ISSUER:-http://keycloak:8080/realms/teamcord}
-      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-teamcord-web}
-      FILES_PUBLIC_URL: ${FILES_PUBLIC_URL:-http://localhost:3003}
+      KEYCLOAK_ISSUER: ${KEYCLOAK_INTERNAL_ISSUER}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+      FILES_PUBLIC_URL: ${FILES_PUBLIC_URL}
       PORT: 3003
     ports:
       - "3003:3003"
@@ -224,6 +224,22 @@ services:
       minio:
         condition: service_healthy
       postgres:
+        condition: service_healthy
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: teamcord-minio-init
+    restart: "no"
+    entrypoint: ["/bin/sh", "/scripts/minio-init.sh"]
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET:-teamcord-files}
+    volumes:
+      - ./docker/minio-init.sh:/scripts/minio-init.sh:ro
+    depends_on:
+      minio:
         condition: service_healthy
 
   # ─── Apps ───────────────────────────────────────────────────────────────────

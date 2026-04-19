@@ -163,7 +163,8 @@ export interface Attachment {
   url: string;
   proxyUrl?: string;
   filename: string;
-  contentType: string;
+  mime_type: string;
+  mimeType?: string;
   size: number;
   width?: number;
   height?: number;
@@ -322,6 +323,17 @@ export interface FileRecord {
   height: number | null;
   thumbnailKey: string | null;
   uploadedAt: string;
+}
+
+export interface FileMeta {
+  id: string;
+  url: string;
+  filename: string;
+  mime_type: string;
+  size: number;
+  width?: number;
+  height?: number;
+  channel_id?: string;
 }
 
 export interface FileUploadRequest {

@@ -3,6 +3,11 @@
 
 # Development (localhost)
 {$DOMAIN:localhost} {
+  # Files API routes -> files service (strip /api/v1/files prefix)
+  handle_path /api/v1/files/* {
+    reverse_proxy files:3003
+  }
+
   # API endpoints
   handle /api/* {
     reverse_proxy messaging:3001
@@ -18,7 +23,15 @@
     reverse_proxy gateway:3002
   }
   
-  # Voice signaling
+  # Voice signaling (socket.io long-poll + websocket upgrade)
+  @voiceWebsocket {
+    path /voice/*
+    header Connection *Upgrade*
+    header Upgrade websocket
+  }
+  handle @voiceWebsocket {
+    reverse_proxy voice:3004
+  }
   handle /voice/* {
     reverse_proxy voice:3004
   }
