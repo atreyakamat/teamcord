@@ -128,10 +128,6 @@ const ProductShell = () => {
     )
   }
 
-  if (!isAuthenticated) {
-    return <AuthScreen />
-  }
-
   if (isBootstrapping) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#10292f] text-[#f6efe5]">
@@ -143,6 +139,10 @@ const ProductShell = () => {
         </div>
       </div>
     )
+  }
+
+  if (!isAuthenticated) {
+    return <AuthScreen />
   }
 
   if (workspaces.length === 0) {

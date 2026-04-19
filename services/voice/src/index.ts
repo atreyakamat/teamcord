@@ -159,7 +159,6 @@ const createWebRtcTransport = async (router: mediasoup.types.Router) => {
   });
   try {
     await transport.setMaxIncomingBitrate(4000000);
-    await transport.setMaxOutgoingBitrate(4000000);
   } catch (error) {
     console.warn('Unable to apply transport bitrate caps:', error);
   }
