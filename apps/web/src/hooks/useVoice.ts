@@ -31,6 +31,7 @@ export const useVoice = () => {
   const consumersRef = useRef<Map<string, mediasoupClient.types.Consumer>>(new Map())
   const cameraTrackRef = useRef<MediaStreamTrack | null>(null)
   const screenTrackRef = useRef<MediaStreamTrack | null>(null)
+  const cameraWasActiveBeforeScreenShareRef = useRef(false)
 
   const rebuildLocalStream = useCallback(() => {
     setLocalStream((current) => {
@@ -71,14 +72,28 @@ export const useVoice = () => {
   const stopScreenShareInternal = useCallback(async () => {
     stopScreenProducer()
     clearScreenTrack()
+
+    let restoredCamera = false
+    if (
+      cameraWasActiveBeforeScreenShareRef.current &&
+      cameraProducerRef.current &&
+      cameraTrackRef.current
+    ) {
+      cameraTrackRef.current.enabled = true
+      await cameraProducerRef.current.resume()
+      restoredCamera = true
+    }
+    cameraWasActiveBeforeScreenShareRef.current = false
+
     rebuildLocalStream()
     setIsScreenSharing(false)
+    setIsVideoOn(restoredCamera)
     socketRef.current?.emit('updateVoiceState', {
       selfMute: isMuted,
       selfDeaf: false,
-      selfVideo: isVideoOn,
+      selfVideo: restoredCamera,
     })
-  }, [clearScreenTrack, isMuted, isVideoOn, rebuildLocalStream, stopScreenProducer])
+  }, [clearScreenTrack, isMuted, rebuildLocalStream, stopScreenProducer])
 
   useEffect(() => {
     socketRef.current = io(VOICE_URL, {
@@ -414,12 +429,27 @@ export const useVoice = () => {
     }
 
     try {
+      if (cameraProducerRef.current && cameraTrackRef.current) {
+        cameraTrackRef.current.enabled = true
+        await cameraProducerRef.current.resume()
+        rebuildLocalStream()
+        setIsVideoOn(true)
+        socketRef.current?.emit('updateVoiceState', {
+          selfMute: isMuted,
+          selfDeaf: false,
+          selfVideo: true,
+        })
+        return
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ video: true })
       const videoTrack = stream.getVideoTracks()[0]
       cameraTrackRef.current = videoTrack
       cameraProducerRef.current = await sendTransportRef.current.produce({
         track: videoTrack,
         appData: { source: 'camera' },
+        encodings: [{ maxBitrate: 2_500_000, maxFramerate: 30, scaleResolutionDownBy: 1 }],
+        codecOptions: { videoGoogleStartBitrate: 1200 },
       })
       rebuildLocalStream()
       setIsVideoOn(true)
@@ -452,14 +482,27 @@ export const useVoice = () => {
     }
 
     if (isVideoOn) {
-      stopCameraProducer()
-      clearCameraTrack()
-      rebuildLocalStream()
+      cameraWasActiveBeforeScreenShareRef.current = true
+      if (cameraTrackRef.current) {
+        cameraTrackRef.current.enabled = false
+      }
+      if (cameraProducerRef.current) {
+        await cameraProducerRef.current.pause()
+      }
       setIsVideoOn(false)
+    } else {
+      cameraWasActiveBeforeScreenShareRef.current = false
     }
 
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true })
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { max: 30 },
+        },
+        audio: false,
+      })
       const screenTrack = stream.getVideoTracks()[0]
       screenTrackRef.current = screenTrack
 
@@ -472,6 +515,8 @@ export const useVoice = () => {
       screenProducerRef.current = await sendTransportRef.current.produce({
         track: screenTrack,
         appData: { source: 'screen' },
+        encodings: [{ maxBitrate: 8_000_000, maxFramerate: 30, scaleResolutionDownBy: 1 }],
+        codecOptions: { videoGoogleStartBitrate: 3000 },
       })
       rebuildLocalStream()
       setIsScreenSharing(true)
@@ -484,13 +529,11 @@ export const useVoice = () => {
       console.error('Failed to start screen share:', error)
     }
   }, [
-    clearCameraTrack,
     isMuted,
     isScreenSharing,
     isVideoOn,
     rebuildLocalStream,
     stopScreenShareInternal,
-    stopCameraProducer,
   ])
 
   return {

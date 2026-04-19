@@ -80,9 +80,9 @@ const getOrCreateRoom = async (roomId: string): Promise<Room> => {
           mimeType: 'video/VP8',
           clockRate: 90000,
           parameters: {
-            'x-google-start-bitrate': 2000,
-            'x-google-min-bitrate': 600,
-            'x-google-max-bitrate': 6000,
+            'x-google-start-bitrate': 3000,
+            'x-google-min-bitrate': 1000,
+            'x-google-max-bitrate': 8000,
           },
         },
         {
@@ -93,8 +93,8 @@ const getOrCreateRoom = async (roomId: string): Promise<Room> => {
             'packetization-mode': 1,
             'profile-level-id': '42e01f',
             'level-asymmetry-allowed': 1,
-            'x-google-start-bitrate': 2000,
-            'x-google-max-bitrate': 6000,
+            'x-google-start-bitrate': 3000,
+            'x-google-max-bitrate': 8000,
           },
         },
       ],
@@ -155,10 +155,10 @@ const createWebRtcTransport = async (router: mediasoup.types.Router) => {
     enableUdp: true,
     enableTcp: true,
     preferUdp: true,
-    initialAvailableOutgoingBitrate: 2500000,
+    initialAvailableOutgoingBitrate: 6000000,
   });
   try {
-    await transport.setMaxIncomingBitrate(4000000);
+    await transport.setMaxIncomingBitrate(12000000);
   } catch (error) {
     console.warn('Unable to apply transport bitrate caps:', error);
   }

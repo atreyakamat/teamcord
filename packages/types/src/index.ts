@@ -142,9 +142,8 @@ export interface Message {
   author?: User;
   content: string;
   type: MessageType;
-  edited: boolean;
   editedAt: string | null;
-  replyToId: string | null;
+  referenceId: string | null;
   replyTo?: Message;
   threadId?: string | null;
   attachments: Attachment[];
@@ -155,21 +154,16 @@ export interface Message {
   pinned?: boolean;
   flags?: number;
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface Attachment {
   id: string;
   url: string;
-  proxyUrl?: string;
   filename: string;
   mime_type: string;
-  mimeType?: string;
-  contentType?: string;
   size: number;
   width?: number;
   height?: number;
-  thumbnailUrl?: string;
 }
 
 export interface ReactionSummary {

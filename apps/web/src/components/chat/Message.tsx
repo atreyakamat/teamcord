@@ -19,6 +19,7 @@ import ReactionList from './ReactionList'
 interface MessageProps {
   message: MessageType
   isGrouped?: boolean
+  isHighlighted?: boolean
   onReply?: (message: MessageType) => void
   onEdit?: (message: MessageType) => void
 }
@@ -26,6 +27,7 @@ interface MessageProps {
 export default function Message({
   message,
   isGrouped = false,
+  isHighlighted = false,
   onReply,
   onEdit,
 }: MessageProps) {
@@ -123,7 +125,9 @@ export default function Message({
 
   return (
     <div
-      className={`group relative flex w-full items-start hover:bg-[#2e3035] ${isGrouped ? 'py-[2px] pl-[72px]' : 'mt-4 px-4 py-[2px]'}`}
+      id={`message-${message.id}`}
+      data-message-id={message.id}
+      className={`group relative flex w-full items-start hover:bg-[#2e3035] ${isGrouped ? 'py-[2px] pl-[72px]' : 'mt-4 px-4 py-[2px]'} ${isHighlighted ? 'bg-[rgba(88,101,242,0.18)]' : ''}`}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => !showEmojiPicker && !showMoreMenu && setShowActions(false)}
     >

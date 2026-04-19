@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useChannelStore } from '../../stores/channels'
 import Message from './Message'
 import { useGatewayStore } from '../../stores/gateway'
@@ -6,6 +6,8 @@ import { useMessageStore } from '../../stores/messages'
 
 const MessageList = () => {
   const selectedChannelId = useChannelStore((state) => state.selectedChannelId)
+  const jumpTarget = useChannelStore((state) => state.jumpTarget)
+  const clearJumpTarget = useChannelStore((state) => state.clearJumpTarget)
   const messagesByChannel = useMessageStore((state) => state.messagesByChannel)
   const loading = useMessageStore((state) => state.loading)
   const hasMore = useMessageStore((state) => state.hasMore)
@@ -15,6 +17,7 @@ const MessageList = () => {
   const unsubscribeChannel = useGatewayStore((state) => state.unsubscribeChannel)
 
   const listRef = useRef<HTMLDivElement>(null)
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null)
 
   useEffect(() => {
     connect()
@@ -47,6 +50,20 @@ const MessageList = () => {
     }
   }, [fetchMessages, hasMore, loading, messagesByChannel, selectedChannelId])
 
+  const scrollToMessage = useCallback((messageId: string) => {
+    const element = document.getElementById(`message-${messageId}`)
+    if (!element) {
+      return false
+    }
+
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setHighlightedMessageId(messageId)
+    window.setTimeout(() => {
+      setHighlightedMessageId((current) => (current === messageId ? null : current))
+    }, 1800)
+    return true
+  }, [])
+
   useEffect(() => {
     if (!listRef.current) {
       return
@@ -59,6 +76,44 @@ const MessageList = () => {
       listRef.current.scrollTop = listRef.current.scrollHeight
     }
   }, [messagesByChannel, selectedChannelId])
+
+  useEffect(() => {
+    if (!selectedChannelId || !jumpTarget || jumpTarget.channelId !== selectedChannelId) {
+      return
+    }
+
+    const channelMessages = messagesByChannel[selectedChannelId] || []
+    const targetFound = channelMessages.some((message) => message.id === jumpTarget.messageId)
+
+    if (targetFound) {
+      if (scrollToMessage(jumpTarget.messageId)) {
+        clearJumpTarget()
+      }
+      return
+    }
+
+    if (loading[selectedChannelId]) {
+      return
+    }
+
+    if (hasMore[selectedChannelId] && channelMessages.length > 0) {
+      fetchMessages(selectedChannelId, channelMessages[0].id)
+      return
+    }
+
+    if (!hasMore[selectedChannelId]) {
+      clearJumpTarget()
+    }
+  }, [
+    clearJumpTarget,
+    fetchMessages,
+    hasMore,
+    jumpTarget,
+    loading,
+    messagesByChannel,
+    scrollToMessage,
+    selectedChannelId,
+  ])
 
   const messages = selectedChannelId ? messagesByChannel[selectedChannelId] || [] : []
   const isLoading = selectedChannelId ? loading[selectedChannelId] : false
@@ -98,6 +153,7 @@ const MessageList = () => {
           key={message.id}
           message={message}
           isGrouped={isGrouped}
+          isHighlighted={highlightedMessageId === message.id}
           onReply={(replyMessage) => {
             console.log('Reply to:', replyMessage)
           }}

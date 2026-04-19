@@ -24,12 +24,13 @@ const ChatArea = ({ onToggleMemberList }: ChatAreaProps) => {
   const selectedChannelId = useChannelStore((state) => state.selectedChannelId)
   const selectedWorkspaceId = useChannelStore((state) => state.selectedWorkspaceId)
   const setSelectedChannel = useChannelStore((state) => state.setSelectedChannel)
+  const setJumpTarget = useChannelStore((state) => state.setJumpTarget)
   const channels = useChannelStore((state) => state.channels)
   const channel = channels.find((currentChannel) => currentChannel.id === selectedChannelId)
   const [inputValue, setInputValue] = useState('')
   const [searchValue, setSearchValue] = useState('')
   const [searchResults, setSearchResults] = useState<
-    { id: string; channelId: string; content: string; createdAt?: string }[]
+    { id: string; channelId: string; channelName?: string; content: string; createdAt?: string }[]
   >([])
   const [searchLoading, setSearchLoading] = useState(false)
   const [searchError, setSearchError] = useState('')
@@ -88,6 +89,7 @@ const ChatArea = ({ onToggleMemberList }: ChatAreaProps) => {
           hits.map((hit) => ({
             id: String(hit.id ?? ''),
             channelId: String(hit.channel_id ?? ''),
+            channelName: hit.channel_name ? String(hit.channel_name) : undefined,
             content: String(hit.content ?? ''),
             createdAt: hit.created_at ? String(hit.created_at) : undefined,
           }))
@@ -167,14 +169,20 @@ const ChatArea = ({ onToggleMemberList }: ChatAreaProps) => {
                         event.preventDefault()
                         if (result.channelId) {
                           setSelectedChannel(result.channelId)
+                          setJumpTarget(result.channelId, result.id)
                         }
                         setShowSearchResults(false)
                       }}
                     >
                       <span className="truncate text-xs font-semibold text-dc-normal">
-                        #{channelsById.get(result.channelId)?.name || 'channel'}
+                        #{result.channelName || channelsById.get(result.channelId)?.name || 'channel'}
                       </span>
                       <span className="truncate text-xs text-dc-muted">{result.content || '(no text)'}</span>
+                      {result.createdAt && (
+                        <span className="text-[11px] text-dc-muted/80">
+                          {new Date(result.createdAt).toLocaleString()}
+                        </span>
+                      )}
                     </button>
                   ))}
               </div>

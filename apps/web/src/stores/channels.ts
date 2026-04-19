@@ -43,6 +43,7 @@ interface ChannelState {
   selectedChannelId: string | null
   activeVoiceChannelId: string | null
   selectedWorkspaceId: string | null
+  jumpTarget: { channelId: string; messageId: string } | null
   typingUsers: Record<string, TypingUser[]>
 
   setChannels: (channels: Channel[]) => void
@@ -50,6 +51,8 @@ interface ChannelState {
   setSelectedChannel: (id: string | null) => void
   setActiveVoiceChannel: (id: string | null) => void
   setSelectedWorkspace: (id: string | null) => void
+  setJumpTarget: (channelId: string, messageId: string) => void
+  clearJumpTarget: () => void
   addChannel: (channel: Channel) => void
   updateChannel: (channel: Partial<Channel> & { id: string }) => void
   removeChannel: (id: string) => void
@@ -63,6 +66,7 @@ export const useChannelStore = create<ChannelState>((set, get) => ({
   selectedChannelId: null,
   activeVoiceChannelId: null,
   selectedWorkspaceId: null,
+  jumpTarget: null,
   typingUsers: {},
 
   setChannels: (channels) => set({ channels }),
@@ -78,6 +82,17 @@ export const useChannelStore = create<ChannelState>((set, get) => ({
       selectedWorkspaceId: id,
       selectedChannelId: null,
       activeVoiceChannelId: null,
+      jumpTarget: null,
+    }),
+
+  setJumpTarget: (channelId, messageId) =>
+    set({
+      jumpTarget: { channelId, messageId },
+    }),
+
+  clearJumpTarget: () =>
+    set({
+      jumpTarget: null,
     }),
 
   addChannel: (channel) =>
