@@ -70,6 +70,69 @@ const readinessChecks = [
   'Voice and video foundation',
 ]
 
+const featureCatalog = [
+  {
+    category: 'Messaging',
+    title: 'Channels, categories, and structured workspace navigation',
+    detail: 'Organize work by workspace, project, and channel instead of one endless feed.',
+  },
+  {
+    category: 'Messaging',
+    title: 'Threads and long-form async discussions',
+    detail: 'Keep follow-ups focused without derailing the main channel conversation.',
+  },
+  {
+    category: 'Messaging',
+    title: 'Direct messages and team member discovery',
+    detail: 'Open 1:1 conversations quickly from the member list and sidebar.',
+  },
+  {
+    category: 'Messaging',
+    title: 'Emoji reactions and fast feedback loops',
+    detail: 'Capture lightweight sentiment and approvals without extra message noise.',
+  },
+  {
+    category: 'Collaboration',
+    title: 'Voice rooms with camera and screen sharing',
+    detail: 'Join live collaboration sessions without leaving the workspace context.',
+  },
+  {
+    category: 'Collaboration',
+    title: 'Attachment uploads with private object storage',
+    detail: 'Share files through MinIO-backed storage with signed access URLs.',
+  },
+  {
+    category: 'Collaboration',
+    title: 'Workspace-wide search',
+    detail: 'Search indexed messages and jump directly to the relevant channel context.',
+  },
+  {
+    category: 'Knowledge',
+    title: 'Decision logging',
+    detail: 'Preserve major team outcomes so important calls do not get lost in chat history.',
+  },
+  {
+    category: 'Knowledge',
+    title: 'Client portal flows',
+    detail: 'Expose scoped collaboration surfaces for external stakeholders where needed.',
+  },
+  {
+    category: 'AI',
+    title: 'AI-native workflow hooks',
+    detail: 'Support summaries, retrieval, and workflow automation from inside TeamCord.',
+  },
+  {
+    category: 'Platform',
+    title: 'Keycloak OIDC authentication',
+    detail: 'Use standards-based SSO-ready auth with secure redirect and refresh flows.',
+  },
+  {
+    category: 'Platform',
+    title: 'Installable PWA and self-hosted deployment',
+    detail: 'Run as a web app across devices and deploy with Docker on infrastructure you control.',
+  },
+]
+
 export default function LandingPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[linear-gradient(180deg,#f6efe5_0%,#f0e6d6_48%,#efe5d4_100%)] text-[#132126]">
@@ -89,6 +152,7 @@ export default function LandingPage() {
           <nav className="hidden items-center gap-6 text-sm text-[#28444a] md:flex">
             <a href="#why" className="transition hover:text-[#0d262b]">Why</a>
             <a href="#features" className="transition hover:text-[#0d262b]">Features</a>
+            <a href="#catalog" className="transition hover:text-[#0d262b]">All Features</a>
             <a href="#roadmap" className="transition hover:text-[#0d262b]">Roadmap</a>
           </nav>
 
@@ -241,6 +305,28 @@ export default function LandingPage() {
                   </div>
                   <h3 className="font-display mt-5 text-3xl leading-tight text-[#112d33]">{title}</h3>
                   <p className="mt-4 text-sm leading-7 text-[#466268]">{body}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section id="catalog" className="space-y-8">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#6a5751]">Complete Catalog</p>
+              <h2 className="font-display mt-3 text-4xl text-[#112d33]">Everything TeamCord ships in one clear list.</h2>
+              <p className="mt-4 text-base leading-8 text-[#3f5b60]">
+                From real-time chat and calls to Keycloak auth, file storage, PWA support, and self-hosting controls.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {featureCatalog.map((feature) => (
+                <article key={feature.title} className="glass-panel rounded-[1.6rem] p-5">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#6d5a53]">
+                    {feature.category}
+                  </div>
+                  <h3 className="mt-3 text-lg font-semibold leading-7 text-[#132126]">{feature.title}</h3>
+                  <p className="mt-2 text-sm leading-7 text-[#466268]">{feature.detail}</p>
                 </article>
               ))}
             </div>

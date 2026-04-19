@@ -90,6 +90,27 @@ docker exec teamcord-ollama-1 ollama pull llama3   # Optional: enable AI agent
 open http://localhost:3000
 ```
 
+### Deploy Web App to Firebase Hosting
+
+```bash
+# 1) Install Firebase CLI once
+npm install -g firebase-tools
+
+# 2) Authenticate
+firebase login
+
+# 3) Set your Firebase project id in .firebaserc
+#    replace "teamcord-your-project-id" with your real project
+
+# 4) Build and deploy
+corepack pnpm firebase:deploy
+```
+
+This repo includes ready Firebase Hosting files at the root:
+- `firebase.json` (SPA rewrite + caching headers)
+- `.firebaserc` (default project alias)
+- `.firebaseignore`
+
 ## 📁 Project Structure
 
 ```
