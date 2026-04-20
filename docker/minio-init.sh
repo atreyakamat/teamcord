@@ -11,6 +11,6 @@ mc alias set local "${MINIO_ENDPOINT}" "${MINIO_ROOT_USER}" "${MINIO_ROOT_PASSWO
 
 echo "Ensuring bucket exists: ${MINIO_BUCKET}"
 mc mb --ignore-existing "local/${MINIO_BUCKET}"
-mc anonymous set none "local/${MINIO_BUCKET}"
+mc anonymous set download "local/${MINIO_BUCKET}"
 
 echo "MinIO initialization complete."

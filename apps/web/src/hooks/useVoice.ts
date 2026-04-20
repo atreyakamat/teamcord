@@ -377,6 +377,7 @@ export const useVoice = () => {
 
     clearCameraTrack()
     clearScreenTrack()
+    cameraWasActiveBeforeScreenShareRef.current = false
 
     setPeers({})
     setCurrentRoomId(null)
@@ -526,6 +527,17 @@ export const useVoice = () => {
         selfVideo: true,
       })
     } catch (error) {
+      if (
+        cameraWasActiveBeforeScreenShareRef.current &&
+        cameraProducerRef.current &&
+        cameraTrackRef.current
+      ) {
+        cameraTrackRef.current.enabled = true
+        await cameraProducerRef.current.resume()
+        rebuildLocalStream()
+        setIsVideoOn(true)
+      }
+      cameraWasActiveBeforeScreenShareRef.current = false
       console.error('Failed to start screen share:', error)
     }
   }, [
