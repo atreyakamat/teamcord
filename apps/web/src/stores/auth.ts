@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { devtools } from 'zustand/middleware'
 import {
   apiFetch,
   clearStoredToken,
@@ -195,216 +196,221 @@ function applyTokenResponse(payload: KeycloakTokenResponse) {
   }
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  token: initialToken,
-  user: null,
-  workspaces: [],
-  isAuthenticated: Boolean(initialToken),
-  isLoading: false,
+export const useAuthStore = create<AuthState>()(
+  devtools(
+    (set, get) => ({
+      token: initialToken,
+      user: null,
+      workspaces: [],
+      isAuthenticated: Boolean(initialToken),
+      isLoading: false,
 
-  setToken: (token) => {
-    setStoredToken(token)
-    set({ token, isAuthenticated: true })
-    scheduleRefresh()
-  },
+      setToken: (token) => {
+        setStoredToken(token)
+        set({ token, isAuthenticated: true })
+        scheduleRefresh()
+      },
 
-  setUser: (user) => set({ user }),
+      setUser: (user) => set({ user }),
 
-  setWorkspaces: (workspaces) => set({ workspaces }),
+      setWorkspaces: (workspaces) => set({ workspaces }),
 
-  logout: () => {
-    clearRefreshTimer()
-    clearStoredToken()
-    setRefreshToken(null)
-    setTokenExpiry(null)
-    set({ token: null, user: null, workspaces: [], isAuthenticated: false })
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem('nexus_token')
-      const logoutUrl = new URL(getLogoutEndpoint())
-      logoutUrl.searchParams.set('client_id', KEYCLOAK_CLIENT_ID)
-      logoutUrl.searchParams.set('post_logout_redirect_uri', window.location.origin)
-      window.location.assign(logoutUrl.toString())
-    }
-  },
+      logout: () => {
+        clearRefreshTimer()
+        clearStoredToken()
+        setRefreshToken(null)
+        setTokenExpiry(null)
+        set({ token: null, user: null, workspaces: [], isAuthenticated: false })
+        if (typeof window !== 'undefined') {
+          window.localStorage.removeItem('nexus_token')
+          const logoutUrl = new URL(getLogoutEndpoint())
+          logoutUrl.searchParams.set('client_id', KEYCLOAK_CLIENT_ID)
+          logoutUrl.searchParams.set('post_logout_redirect_uri', window.location.origin)
+          window.location.assign(logoutUrl.toString())
+        }
+      },
 
-  login: async () => {
-    if (typeof window === 'undefined') {
-      return false
-    }
+      login: async () => {
+        if (typeof window === 'undefined') {
+          return false
+        }
 
-    set({ isLoading: true })
-    try {
-      const state = randomString(24)
-      const verifier = randomString(64)
-      const challenge = await buildPkceChallenge(verifier)
+        set({ isLoading: true })
+        try {
+          const state = randomString(24)
+          const verifier = randomString(64)
+          const challenge = await buildPkceChallenge(verifier)
 
-      window.sessionStorage.setItem(OIDC_STATE_KEY, state)
-      window.sessionStorage.setItem(OIDC_VERIFIER_KEY, verifier)
+          window.sessionStorage.setItem(OIDC_STATE_KEY, state)
+          window.sessionStorage.setItem(OIDC_VERIFIER_KEY, verifier)
 
-      const redirectUrl = new URL(getAuthEndpoint())
-      redirectUrl.searchParams.set('response_type', 'code')
-      redirectUrl.searchParams.set('client_id', KEYCLOAK_CLIENT_ID)
-      redirectUrl.searchParams.set('redirect_uri', getRedirectUri())
-      redirectUrl.searchParams.set('scope', 'openid profile email')
-      redirectUrl.searchParams.set('state', state)
-      redirectUrl.searchParams.set('code_challenge', challenge)
-      redirectUrl.searchParams.set('code_challenge_method', 'S256')
+          const redirectUrl = new URL(getAuthEndpoint())
+          redirectUrl.searchParams.set('response_type', 'code')
+          redirectUrl.searchParams.set('client_id', KEYCLOAK_CLIENT_ID)
+          redirectUrl.searchParams.set('redirect_uri', getRedirectUri())
+          redirectUrl.searchParams.set('scope', 'openid profile email')
+          redirectUrl.searchParams.set('state', state)
+          redirectUrl.searchParams.set('code_challenge', challenge)
+          redirectUrl.searchParams.set('code_challenge_method', 'S256')
 
-      window.location.assign(redirectUrl.toString())
-      return true
-    } catch (error) {
-      console.error('Failed to start OIDC login:', error)
-      return false
-    } finally {
-      set({ isLoading: false })
-    }
-  },
+          window.location.assign(redirectUrl.toString())
+          return true
+        } catch (error) {
+          console.error('Failed to start OIDC login:', error)
+          return false
+        } finally {
+          set({ isLoading: false })
+        }
+      },
 
-  register: async () => {
-    return get().login()
-  },
+      register: async () => {
+        return get().login()
+      },
 
-  handleCallback: async () => {
-    if (typeof window === 'undefined') return false
+      handleCallback: async () => {
+        if (typeof window === 'undefined') return false
 
-    const params = new URLSearchParams(window.location.search)
-    const code = params.get('code')
-    const state = params.get('state')
-    const error = params.get('error')
-    if (error) {
-      console.error('OIDC callback error:', error, params.get('error_description'))
-      return false
-    }
-    if (!code || !state) {
-      return false
-    }
+        const params = new URLSearchParams(window.location.search)
+        const code = params.get('code')
+        const state = params.get('state')
+        const error = params.get('error')
+        if (error) {
+          console.error('OIDC callback error:', error, params.get('error_description'))
+          return false
+        }
+        if (!code || !state) {
+          return false
+        }
 
-    set({ isLoading: true })
-    try {
-      const expectedState = window.sessionStorage.getItem(OIDC_STATE_KEY)
-      const verifier = window.sessionStorage.getItem(OIDC_VERIFIER_KEY)
-      if (!expectedState || !verifier || expectedState !== state) {
-        throw new Error('Invalid OIDC callback state')
-      }
+        set({ isLoading: true })
+        try {
+          const expectedState = window.sessionStorage.getItem(OIDC_STATE_KEY)
+          const verifier = window.sessionStorage.getItem(OIDC_VERIFIER_KEY)
+          if (!expectedState || !verifier || expectedState !== state) {
+            throw new Error('Invalid OIDC callback state')
+          }
 
-      window.sessionStorage.removeItem(OIDC_STATE_KEY)
-      window.sessionStorage.removeItem(OIDC_VERIFIER_KEY)
+          window.sessionStorage.removeItem(OIDC_STATE_KEY)
+          window.sessionStorage.removeItem(OIDC_VERIFIER_KEY)
 
-      const payload = await exchangeToken(
-        new URLSearchParams({
-          grant_type: 'authorization_code',
-          client_id: KEYCLOAK_CLIENT_ID,
-          code,
-          redirect_uri: getRedirectUri(),
-          code_verifier: verifier,
-        })
-      )
+          const payload = await exchangeToken(
+            new URLSearchParams({
+              grant_type: 'authorization_code',
+              client_id: KEYCLOAK_CLIENT_ID,
+              code,
+              redirect_uri: getRedirectUri(),
+              code_verifier: verifier,
+            })
+          )
 
-      const session = applyTokenResponse(payload)
-      set({ token: session.token, isAuthenticated: true })
+          const session = applyTokenResponse(payload)
+          set({ token: session.token, isAuthenticated: true })
 
-      window.history.replaceState({}, '', '/app')
-      await get().fetchCurrentUser()
-      await get().fetchWorkspaces()
-      return true
-    } catch (callbackError) {
-      console.error('Failed to complete OIDC callback:', callbackError)
-      return false
-    } finally {
-      set({ isLoading: false })
-    }
-  },
+          window.history.replaceState({}, '', '/app')
+          await get().fetchCurrentUser()
+          await get().fetchWorkspaces()
+          return true
+        } catch (callbackError) {
+          console.error('Failed to complete OIDC callback:', callbackError)
+          return false
+        } finally {
+          set({ isLoading: false })
+        }
+      },
 
-  refreshSession: async () => {
-    const refreshToken = getRefreshToken()
-    if (!refreshToken) {
-      return false
-    }
+      refreshSession: async () => {
+        const refreshToken = getRefreshToken()
+        if (!refreshToken) {
+          return false
+        }
 
-    try {
-      const payload = await exchangeToken(
-        new URLSearchParams({
-          grant_type: 'refresh_token',
-          client_id: KEYCLOAK_CLIENT_ID,
-          refresh_token: refreshToken,
-        })
-      )
-      const session = applyTokenResponse(payload)
-      set({ token: session.token, isAuthenticated: true })
-      return true
-    } catch (error) {
-      console.error('Session refresh failed:', error)
-      clearRefreshTimer()
-      clearStoredToken()
-      setRefreshToken(null)
-      setTokenExpiry(null)
-      set({ token: null, user: null, workspaces: [], isAuthenticated: false })
-      return false
-    }
-  },
+        try {
+          const payload = await exchangeToken(
+            new URLSearchParams({
+              grant_type: 'refresh_token',
+              client_id: KEYCLOAK_CLIENT_ID,
+              refresh_token: refreshToken,
+            })
+          )
+          const session = applyTokenResponse(payload)
+          set({ token: session.token, isAuthenticated: true })
+          return true
+        } catch (error) {
+          console.error('Session refresh failed:', error)
+          clearRefreshTimer()
+          clearStoredToken()
+          setRefreshToken(null)
+          setTokenExpiry(null)
+          set({ token: null, user: null, workspaces: [], isAuthenticated: false })
+          return false
+        }
+      },
 
-  fetchCurrentUser: async () => {
-    const { token } = get()
-    if (!token) return
+      fetchCurrentUser: async () => {
+        const { token } = get()
+        if (!token) return
 
-    if (isTokenExpiringSoon()) {
-      await get().refreshSession()
-    }
-
-    try {
-      const response = await apiFetch('/api/v1/users/@me')
-      if (!response.ok) {
-        if (response.status === 401) {
+        if (isTokenExpiringSoon()) {
           await get().refreshSession()
-          const retryResponse = await apiFetch('/api/v1/users/@me')
-          if (!retryResponse.ok) {
+        }
+
+        try {
+          const response = await apiFetch('/api/v1/users/@me')
+          if (!response.ok) {
+            if (response.status === 401) {
+              await get().refreshSession()
+              const retryResponse = await apiFetch('/api/v1/users/@me')
+              if (!retryResponse.ok) {
+                return
+              }
+              const retryData = await readApiData<Record<string, unknown>>(retryResponse)
+              const retryUser = normalizeUser(retryData)
+              if (retryUser) {
+                set({ user: retryUser })
+              }
+              return
+            }
             return
           }
-          const retryData = await readApiData<Record<string, unknown>>(retryResponse)
-          const retryUser = normalizeUser(retryData)
-          if (retryUser) {
-            set({ user: retryUser })
+
+          const data = await readApiData<Record<string, unknown>>(response)
+          const user = normalizeUser(data)
+          if (user) {
+            set({ user })
           }
-          return
+        } catch (error) {
+          console.error('Failed to fetch user:', error)
         }
-        return
-      }
+      },
 
-      const data = await readApiData<Record<string, unknown>>(response)
-      const user = normalizeUser(data)
-      if (user) {
-        set({ user })
-      }
-    } catch (error) {
-      console.error('Failed to fetch user:', error)
-    }
-  },
+      fetchWorkspaces: async () => {
+        const { token } = get()
+        if (!token) return
 
-  fetchWorkspaces: async () => {
-    const { token } = get()
-    if (!token) return
-
-    if (isTokenExpiringSoon()) {
-      await get().refreshSession()
-    }
-
-    try {
-      const response = await apiFetch('/api/v1/workspaces/@me')
-      if (!response.ok) {
-        if (response.status === 401) {
+        if (isTokenExpiringSoon()) {
           await get().refreshSession()
-          return
         }
-        return
-      }
 
-      const data = await readApiData<Record<string, unknown>[]>(response)
-      set({ workspaces: (data || []).map((workspace) => normalizeWorkspace(workspace)) })
-    } catch (error) {
-      console.error('Failed to fetch workspaces:', error)
-    }
-  },
-}))
+        try {
+          const response = await apiFetch('/api/v1/workspaces/@me')
+          if (!response.ok) {
+            if (response.status === 401) {
+              await get().refreshSession()
+              return
+            }
+            return
+          }
+
+          const data = await readApiData<Record<string, unknown>[]>(response)
+          set({ workspaces: (data || []).map((workspace) => normalizeWorkspace(workspace)) })
+        } catch (error) {
+          console.error('Failed to fetch workspaces:', error)
+        }
+      },
+    }),
+    { name: 'AuthStore' }
+  )
+)
 
 if (typeof window !== 'undefined' && initialToken && getTokenExpiry()) {
   scheduleRefresh()

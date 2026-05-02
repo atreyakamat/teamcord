@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { devtools } from 'zustand/middleware'
 import { GATEWAY_URL } from '../lib/config'
 import { normalizeChannel, normalizeMessage, normalizeUser } from '../lib/normalizers'
 import { useAuthStore } from './auth'
@@ -23,7 +24,8 @@ interface GatewayState {
 const MAX_RECONNECT_ATTEMPTS = 5
 const BASE_RECONNECT_DELAY = 1000
 
-export const useGatewayStore = create<GatewayState>((set, get) => ({
+export const useGatewayStore = devtools(
+  create<GatewayState>((set, get) => ({
   socket: null,
   connected: false,
   sessionId: null,
@@ -123,7 +125,9 @@ export const useGatewayStore = create<GatewayState>((set, get) => ({
   unsubscribeChannel: (channelId) => {
     get().sendMessage(101, { channel_id: channelId, channel_ids: [channelId] })
   },
-}))
+})),
+  { name: 'GatewayStore' }
+)
 
 function handleDispatch(
   payload: { op: number; t?: string; d?: Record<string, unknown>; s?: number },

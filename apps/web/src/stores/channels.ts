@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { devtools } from 'zustand/middleware'
 import { apiFetch, readApiData } from '../lib/api'
 import { normalizeChannel } from '../lib/normalizers'
 
@@ -60,7 +61,8 @@ interface ChannelState {
   fetchChannels: (workspaceId: string) => Promise<void>
 }
 
-export const useChannelStore = create<ChannelState>((set, get) => ({
+export const useChannelStore = devtools(
+  create<ChannelState>((set, get) => ({
   channels: [],
   categories: [],
   selectedChannelId: null,
@@ -216,4 +218,6 @@ export const useChannelStore = create<ChannelState>((set, get) => ({
       console.error('Failed to fetch channels:', error)
     }
   },
-}))
+})),
+  { name: 'ChannelStore' }
+)

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { devtools } from 'zustand/middleware'
 import { apiFetch, readApiData } from '../lib/api'
 import { normalizeMessage } from '../lib/normalizers'
 
@@ -63,7 +64,8 @@ interface MessageState {
   fetchMessages: (channelId: string, before?: string) => Promise<void>
 }
 
-export const useMessageStore = create<MessageState>((set, get) => ({
+export const useMessageStore = devtools(
+  create<MessageState>((set, get) => ({
   messagesByChannel: {},
   loading: {},
   hasMore: {},
@@ -244,4 +246,6 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       setLoading(channelId, false)
     }
   },
-}))
+})),
+  { name: 'MessageStore' }
+)
